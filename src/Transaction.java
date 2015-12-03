@@ -1,4 +1,5 @@
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 //This is the basic template for every type of transaction
@@ -20,7 +21,9 @@ public interface Transaction {
 	
 	void commit();
 	
-	Map<Integer, Site> getSitesAccessed();
+	void abort();
+	
+	List<Integer> getSiteIndexesAccessed();
 	
 	//This returns the timstamp at which the transaction began
 	int getBeginningTimestamp();

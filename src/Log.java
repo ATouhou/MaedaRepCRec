@@ -1,7 +1,16 @@
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ * The log keeps track of all actions on a site:
+ * - read
+ * - write
+ * - commit
+ * - abort
+ * - locks given/rejected
+ */
 public class Log {
+	
 	private List<Event> logs = new ArrayList<Event>();
 	
 	/*

@@ -5,7 +5,8 @@ public class Variable {
 	//An index, a value from 1 to 20, referring to one of the 20 distinct variables
 	private int indexVariable = -1;
 	
-	private Version currentVersion = null;
+	//current version is the latest version, but the last committed version the latest committed version
+	private Version latestVersion = null;
 	private Version lastCommittedVersion = null;
 	//Don't need versions when everything is in the site's log
 	//private List<Version> versions = new ArrayList<Version>();
@@ -14,19 +15,44 @@ public class Variable {
 	private boolean isAllowRead = true;
 	
 	// indicates whether there is a replication of itself at other sites
-	private boolean isVariableReplicated; 
+	//private boolean isVariableReplicated; 
 	
 	//	isLock has access control by a semaphore i.e. synchronized, ensuring that only one write thread has access
 	// TODO: locks must be kept seperate from variable because there can be upgrades from read to write
-	private boolean isLock = false;
+	//private boolean isLock = false;
 	
 	//List of all version of this variable
 	private List<Version> allVersions = new ArrayList<Version>();
 	
-	public Variable(int indexVariable, int value, int timestamp){
+	public Variable(int indexVariable, int value, int timestamp, boolean isCommitted){
 		this.setIndexVariable(indexVariable);
-		this.currentVersion = new Version(value, timestamp, -1);
+		this.latestVersion = new Version(value, timestamp, -1, isCommitted);
 
+		if(isCommitted){
+			lastCommittedVersion = this.latestVersion;
+		}
+	}
+	/*
+	 * Read the version of this variable where the version's timestamp
+	 * is less than @timestampBefore i.e. read the COMMITTED version before @timestampBefore
+	 * This method is used by the multiversion protocol.
+	 * @return is the value read
+	 */
+	public int readCommitted(int timestampBefore){
+		//Search the versions backwards
+		for(int i=this.allVersions.size()-1; i>=0; i--){
+			if(allVersions.get(i).isCommitted() 
+					&& allVersions.get(i).getTimestamp()<timestampBefore){
+				return this.allVersions.get(i).getValue();
+			}
+		}
+		return -1;
+	}
+	/*
+	 * @return the latest version, which may not necessarily be committed
+	 */
+	public int readLatest(){
+		return this.lastCommittedVersion.getValue();
 	}
 	/*
 	 * When a currently active transaction writes to a variable, it create a new version
@@ -35,7 +61,9 @@ public class Variable {
 	 * @transactionNumber is the current transaction doing this operation
 	 */
 	public void write(int value, int timestamp, int transactionNumber){
-		this.allVersions.add(new Version(value, timestamp, transactionNumber));
+		boolean isCommitted = false;
+		this.latestVersion = new Version(value, timestamp, transactionNumber, isCommitted);
+		this.allVersions.add(this.latestVersion);
 	}
 	/*
 	 * Update current version to value
@@ -65,26 +93,28 @@ public class Variable {
 		
 		//Get the latest timestamp by @committingTransaction
 		int maxTimestamp = -1;
-		Version newCurrVersion = currentVersion; 
+		Version newCurrVersion = lastCommittedVersion; 
 		for(Version version: this.allVersions){
 			if(version.getFromTransactionNumber()==committingTransaction 
 					&& version.getTimestamp()>maxTimestamp){
 				newCurrVersion = version;
 			}
 		}
-		this.currentVersion = newCurrVersion;
+		newCurrVersion.setCommitted();
+		this.lastCommittedVersion = newCurrVersion;
 	}
 	/*
-	 * Getter for the current version of the variable
+	 * Getter for the current latest version of the variable
 	 */
-	public Version getCurrentVersion(){
-		return this.currentVersion;
+	/*public Version getLatestCommittedVersion(){
+		return this.lastCommittedVersion;
 	}
 	/*
 	 * toString function for Variable
 	 */
 	public String toString(){ 
-		return currentVersion.getTimestamp()+" " +currentVersion.getValue() + "\n";
+		return "Latest version:"+this.latestVersion.getTimestamp()+" " +this.latestVersion.getValue() + "\n"+
+				"Latest committed version:"+this.lastCommittedVersion.getTimestamp()+" "+this.lastCommittedVersion.getValue()+"\n";
 	}
 	
 	/*

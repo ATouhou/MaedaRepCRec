@@ -24,7 +24,7 @@ public class DataManager {
 			Site site = allSites.get(key);
 			for(int indexVariable=2; indexVariable<=20; indexVariable = indexVariable+2){
 				int value = 10 * indexVariable;
-				Variable evenVariable = new Variable(indexVariable, value, 0);
+				Variable evenVariable = new Variable(indexVariable, value, 0, true);
 				site.addVariableAtSite(indexVariable, evenVariable);
 			}
 		}
@@ -33,7 +33,7 @@ public class DataManager {
 		//The odd indexed variables are at one site each (i.e. 1 + index number mod 10 )
 		for(int indexVariable=1; indexVariable<=20; indexVariable = indexVariable+2){
 			int value = 10 * indexVariable;
-			Variable oddVariable = new Variable(indexVariable, value, 0);
+			Variable oddVariable = new Variable(indexVariable, value, 0, true);
 			
 			//Store the variable at siteIndex = 1 + index number mod 10
 			int siteIndex = 1 + (indexVariable % 10);

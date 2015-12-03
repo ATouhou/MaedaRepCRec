@@ -14,7 +14,7 @@ public class Site {
 	private int siteIndex = -1;
 	
 	//Each site has lockmanager
-	//private LockManager lockmanager = new LockManager();
+	private LockManager lockmanager = new LockManager();
 	
 	List<Lock> activeLocks = new ArrayList<Lock>();
 
@@ -37,7 +37,7 @@ public class Site {
 			Variable variable = siteVariables.get(key);
 			variable.setAllowRead(false);
 		}
-		//TODO: lockmanager.releaseSiteLock();
+		lockmanager.releaseSiteLock();
 	}
 	/*
 	 * @return String currentState for all Variables
@@ -69,7 +69,7 @@ public class Site {
 	/*
 	 * @variables is the new set of variables to replace the current one
 	 */
-	public void setVariablesAtSite(Map<Integer, Variable> variables){
+	/*public void setVariablesAtSite(Map<Integer, Variable> variables){
 		this.siteVariables = variables;
 	}
 	
@@ -81,7 +81,7 @@ public class Site {
 		return this.siteVariables.containsKey(variableIndex);
 	}
 	
-	public Variable getCommittedVariable(int indexVariable){
+	/*public Variable getCommittedVariable(int indexVariable){
 		for(int i=0; i<this.siteVariables.size(); i++){
 			if(this.siteVariables.get(i).getIndexVariable() == indexVariable ){
 				return this.siteVariables.get(i);
@@ -135,16 +135,24 @@ public class Site {
 	/*
 	 * Process a request of a lock for the variable with @variableIndex
 	 * @transactionNumber is the transaction number of the trasaction requesting the lock
-	 * @isReadOnly refers to the type of lock to request
+	 * @isLockRequestReadOnly refers to the type of lock to request
 	 * @return the lock or null if not successful
-	 */
-	public Lock requestLock(int transactionNumber, int variableIndex, boolean isReadOnly){
-		Lock candidateLock = new Lock(transactionNumber, this.siteIndex, variableIndex, isReadOnly);
+	 * 
+  	 */
+	public Lock requestLock(int transactionNumber, int variableIndex, boolean isLockRequestReadOnly){
+		Lock candidateLock = new Lock(transactionNumber, this.siteIndex, variableIndex, isLockRequestReadOnly);
 		for(Lock lock: this.activeLocks){
-			//Loop through all the active locks. If there is a write lock already on @variableIndex, return null
-			if(lock.getTransactionNumber()!=transactionNumber
+			//Loop through all the active locks. 
+			//If there is a write lock already on @variableIndex, no other transaction may access it, so return null
+			//If a different transaction has a read lock and the requesting lock is a write lock, do not give the lock i.e. return null
+			if((lock.getTransactionNumber()!=transactionNumber
 					&& lock.getLockedVariableIndex()==variableIndex
-					&& !lock.isReadOnly()){
+					&& !lock.isReadOnly())
+				|| 
+				(lock.getTransactionNumber()!=transactionNumber
+					&& lock.getLockedVariableIndex() == variableIndex
+					&& lock.isReadOnly()
+					&& !isLockRequestReadOnly)){
 				return null;
 			}
 		}

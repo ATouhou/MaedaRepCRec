@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,13 +12,16 @@ public class ROTransaction implements Transaction{
 	//This is timestamp at which the transaction was created
 	private int beginningTimestamp = -1;
 	
+	//A list of all the sites accessed
+	private List<Integer> sitesIndexesAccessed = new ArrayList<Integer>();
+		
 	public ROTransaction(DataManager dm, int transactionNumber, int beginningTimestamp){
 		this.dm = dm;
 		this.transactionNumber = transactionNumber;
 		this.beginningTimestamp = beginningTimestamp;
 	}
 	/*
-	 * processOperation() = read(Variable x) - return the version from when this transaction started.
+	 * processOperation() = read(Variable x) - return the version from before this transaction started.
 	 */
 	@Override
 	public void processOperation(String operation, String[] inputs, int currentTimestamp) {
@@ -29,15 +34,19 @@ public class ROTransaction implements Transaction{
 
 		//Read from any one site
 		Site siteToRead = this.dm.getSite(siteIndexesToReadFrom.get(0));
-		siteToRead.getVariable(variableIndex).read();
-		
-		
+		int readValue = siteToRead.getVariable(variableIndex).readCommitted(this.beginningTimestamp);
+		System.out.println(readValue);
+
+		//Add the site to list of accessed sites
+		sitesIndexesAccessed.add(siteIndexesToReadFrom.get(0));
 	}
 
+	/*
+	 * A read only transaction only uses multiversion protocol, so there aren't any locks
+	 */
 	@Override
 	public void releaseLocks() {
-		// TODO Auto-generated method stub
-		
+		//Do nothing here
 	}
 
 	/*
@@ -46,15 +55,19 @@ public class ROTransaction implements Transaction{
 	 */
 	@Override
 	public void commit() {
-		// TODO Auto-generated method stub
-		
+		//At commit nothing is done
+	}
+	
+	@Override
+	public void abort() {
+		//Abort is never called in read-only transactions
 	}
 
 	@Override
-	public Map<Integer, Site> getSitesAccessed() {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Integer> getSiteIndexesAccessed() {
+		return this.sitesIndexesAccessed;
 	}
+	 
 
 	@Override
 	public int getBeginningTimestamp() {
@@ -70,5 +83,7 @@ public class ROTransaction implements Transaction{
 	public boolean getReadOnly() {
 		return this.isReadOnly;
 	}
+	
+	
 
 }
