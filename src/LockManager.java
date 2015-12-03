@@ -1,10 +1,12 @@
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ * Each site has its own lock manager. The lock manager manages all the locks on its site's variables
+ */
 public class LockManager {
 	List<Transaction> liveTransactions = new ArrayList<Transaction>();
-	//TODO:
-	//Map<> lockTable = new Arra
+	List<Lock> activeLocks = new ArrayList<Lock>();
 	
 	public void releaseSiteLock(){
 		this.liveTransactions = new ArrayList<Transaction>();
@@ -16,5 +18,11 @@ public class LockManager {
 	public void eraseTable(){
 		//lockTable = new Ar;
 	}
+	
+	public void requestLock(){
+		
+	}
+	
+	
 	 
 }

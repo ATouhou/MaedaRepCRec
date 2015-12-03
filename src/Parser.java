@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public class Parser {
 	private String instructionfile = "";
-	private int timestamp = 0; 
+	private int currentTimestamp = 0; 
 	private TransactionManager tm;
 	
 	
@@ -35,11 +35,11 @@ public class Parser {
 			    	if(commands!=null){
 						
 			    		//For each instruction in line: TransactionManager.processOperation()
-			    		tm.processOperation(commands, timestamp);
+			    		tm.processOperation(commands, currentTimestamp);
 			    	}
 		    	}
 		    	//Every new line, time stamp increases
-	    		timestamp++;
+	    		currentTimestamp++;
 		    }
 		} catch (FileNotFoundException e) {
  			e.printStackTrace();
