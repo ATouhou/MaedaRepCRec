@@ -21,6 +21,10 @@ public class RWTransaction implements Transaction{
 	//i.e. [ {site index 1, variable index 3}, {...}, ... ]
 	private List<Integer[]> sitesIndexesVariableIndexesAccessed = new ArrayList<Integer[]>();
 		
+	//A list of commands, where command has the same format as the output of Parser.parseNextInstruction()
+	//The latest queued operation is at the end of the list
+	private List<String[]> queuedOperations = new ArrayList<String[]>();
+		
 	/*
 	 * Instantiates the read-write transaction
 	 */
@@ -120,13 +124,13 @@ public class RWTransaction implements Transaction{
 	}
 
 	@Override
-	public void commit() {
+	public void commit(int currentTimestamp) {
 		//At commit, the transaction informs all the variables to commit
 		for(Integer[] siteXVariableAccessed: this.sitesIndexesVariableIndexesAccessed){
 			int siteIndex = siteXVariableAccessed[0];
 			int variableIndex = siteXVariableAccessed[1];
 			
-			this.dm.commit(siteIndex, variableIndex, transactionNumber);
+			this.dm.commit(siteIndex, variableIndex, transactionNumber, currentTimestamp, transactionNumber);
 		}
 	}
 	
@@ -136,16 +140,16 @@ public class RWTransaction implements Transaction{
 	@Override
 	public void abort() {
 		// TODO: should we delete the version written by this transaction?
-		
+		System.out.println("T"+this.transactionNumber+" aborted.");
 	
 	}
 	
 	@Override
-	public void releaseLocks() {
+	public void releaseLocks(int currentTimestamp) {
 		//When releasing the locks, the transaction informs the sites about the releasing the locks
 		//The transaction sets its own set of locks to null
 		for(Integer siteAccessedIndex: this.sitesIndexesAccessed){
-			this.dm.getSite(siteAccessedIndex).releaseLocks(transactionNumber);
+			this.dm.getSite(siteAccessedIndex).releaseLocks(transactionNumber, currentTimestamp);
 		}
 		
 		this.locks = new ArrayList<Lock>();
@@ -171,6 +175,18 @@ public class RWTransaction implements Transaction{
 	public boolean getReadOnly() {
 		return this.isReadOnly;
 	}
+	public List<String[]> getQueuedOperations() {
+		return queuedOperations;
+	}
+	@Override
+	public void addQueuedOperation(String[] queuedOperations) {
+		this.queuedOperations.add(queuedOperations);
+	}
+	@Override
+	public void removeQueuedOperation(String[] queuedOperations) {
+		this.queuedOperations.remove(queuedOperations);
+	}
+	
 	
 
 }

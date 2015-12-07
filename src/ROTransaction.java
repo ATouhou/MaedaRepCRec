@@ -15,6 +15,9 @@ public class ROTransaction implements Transaction{
 	//A list of all the sites accessed
 	private List<Integer> sitesIndexesAccessed = new ArrayList<Integer>();
 		
+	//A list of commands, where command has the same format as the output of Parser.parseNextInstruction()
+	private List<String[]> queuedOperations = new ArrayList<String[]>();
+
 	public ROTransaction(DataManager dm, int transactionNumber, int beginningTimestamp){
 		this.dm = dm;
 		this.transactionNumber = transactionNumber;
@@ -46,7 +49,7 @@ public class ROTransaction implements Transaction{
 	 * A read only transaction only uses multiversion protocol, so there aren't any locks
 	 */
 	@Override
-	public void releaseLocks() {
+	public void releaseLocks(int currentTimestamp) {
 		//Do nothing here
 	}
 
@@ -55,13 +58,15 @@ public class ROTransaction implements Transaction{
 	 * copies algorithm a read-only transaction need not to check for validation at commit (see slides).
 	 */
 	@Override
-	public void commit() {
+	public void commit(int currentTimestamp) {
 		//At commit nothing is done
 	}
 	
 	@Override
 	public void abort() {
 		//Abort is never called in read-only transactions
+		System.out.println("T"+this.transactionNumber+" aborted.");
+
 	}
 
 	@Override
@@ -84,6 +89,19 @@ public class ROTransaction implements Transaction{
 	public boolean getReadOnly() {
 		return this.isReadOnly;
 	}
+	@Override
+	public List<String[]> getQueuedOperations() {
+		return this.queuedOperations;
+	}
+	@Override
+	public void addQueuedOperation(String[] queuedOperations) {
+		this.queuedOperations.add(queuedOperations);
+	}
+	@Override
+	public void removeQueuedOperation(String[] queuedOperations) {
+		this.queuedOperations.remove(queuedOperations);
+	}
+	 
 	
 	
 

@@ -17,9 +17,9 @@ public interface Transaction {
 	
 	void processOperation(String operation, String[] inputs, int currentTimestamp);
 	
-	void releaseLocks();
+	void releaseLocks(int currentTimestamp);
 	
-	void commit();
+	void commit(int currentTimestamp);
 	
 	void abort();
 	
@@ -27,4 +27,10 @@ public interface Transaction {
 	
 	//This returns the timstamp at which the transaction began
 	int getBeginningTimestamp();
+	
+	//Operations queued from this Transaction
+	List<String[]> getQueuedOperations();
+	void addQueuedOperation(String[] queuedOperations);
+	void removeQueuedOperation(String[] queuedOperations);
+
 }

@@ -2,6 +2,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class DataManager {
 	//Integer refers to the site index
@@ -98,10 +100,31 @@ public class DataManager {
 	 * @siteIndex is the site index, which is decided from Transaction.
 	 * @variableIndex is the variable index, also given from Transaction.
 	 * @committingTransaction indicates which transaction is committing
+	 * @currentTimestamp is the current timestamp
+	 * @transactionNumber is the current transaction doing this operation
 	 */
-	public void commit(int siteIndex, int variableIndex, int committingTransaction){
-		this.allSites.get(siteIndex).commit(variableIndex, committingTransaction);
+	public void commit(int siteIndex, int variableIndex, int committingTransaction, int currentTimestamp, int transactionNumber){
+		//int variableIndex, int committingTransaction, int currentTimestamp, int transactionNumber
+		this.allSites.get(siteIndex).commit(variableIndex, committingTransaction, currentTimestamp, transactionNumber);
 
+	}
+	/*
+	 * Return the lock that is conflicting with a hypothetical lock of the following properties:
+	 * @transactionNumber is the transaction number of the transaction requesting the lock
+	 * @variableIndex is the variable index the hypothetical lock would hold on
+	 * @isLockRequestReadOnly refers to the type of the hypothetical lock
+	 * @return the lock or null if not successful
+	 */
+	public Lock getConflictingLock(int transactionNumber, int variableIndex, boolean isLockRequestReadOnly){
+		List<Integer> siteIndexesToWrite  = this.getAvailableSitesVariablesWhere(variableIndex);
+		Lock conflictingLock = null;
+		for(Integer siteIndex: siteIndexesToWrite){
+			conflictingLock = this.getSite(siteIndex).getConflictingLock(transactionNumber, variableIndex, false);
+			if(conflictingLock!=null){
+				return conflictingLock;
+			}
+		}
+		return conflictingLock;
 	}
 	/******************************************************************************************************
 	 * Setter, getter, and dump method
@@ -118,10 +141,11 @@ public class DataManager {
 	 */
 	public void dump(){
 		//Go through each site
-		for(Integer siteIndex: this.allSites.keySet()){
+		SortedSet<Integer> keys = new TreeSet<Integer>(this.allSites.keySet());
+		for(Integer siteIndex: keys){
 			Site site = this.allSites.get(siteIndex);
 			System.out.println("Site Index: "+siteIndex);
-			System.out.println("\tVariables in site "+siteIndex+": "+site.getVariableToString());
+			System.out.println(site.getVariableToString());
 		}
 	}
 	/*
@@ -137,7 +161,8 @@ public class DataManager {
 	 */
 	public void dumpVariable(int xj){
 		//Go through each site
-		for(Integer siteIndex: this.allSites.keySet()){
+		SortedSet<Integer> keys = new TreeSet<Integer>(this.allSites.keySet());
+		for(Integer siteIndex: keys){
 			Site site = this.allSites.get(siteIndex);
 			System.out.println("Site Index: "+siteIndex);
 			System.out.println("\tVariables in site "+siteIndex+": "+site.getVariableToString(xj));

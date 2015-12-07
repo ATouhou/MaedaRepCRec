@@ -2,6 +2,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class Site {
 	//Integer refers to the variable index
@@ -10,8 +12,8 @@ public class Site {
 	private boolean isSiteDown = true;
 	
 	//Nothing shall pass the site without the log knowing of it
-	//TODO: add events to log
-	private Log siteLog;
+	//TODO: add locks, recover, and fail to log
+	private Log siteLog = new Log();
 	
 	//Site index
 	private int siteIndex = -1;
@@ -66,9 +68,16 @@ public class Site {
 	 * Add a before image and timestamp to the list of versions
 	 * @variableIndex is the variable index, also given from Transaction.
 	 * @committingTransaction indicates which transaction is committing
+	 * @currentTimestamp is the current timestamp
+	 * @transactionNumber is the current transaction doing this operation
 	 */
-	public void commit(int variableIndex, int committingTransaction){
-		this.getVariable(variableIndex).commit(committingTransaction);
+	public void commit(int variableIndex, int committingTransaction, int currentTimestamp, int transactionNumber){
+
+		int valueCommitted = this.getVariable(variableIndex).commit(committingTransaction);
+			 
+		String[] details = new String[]{"commit",""+transactionNumber, ""+variableIndex, ""+valueCommitted};
+		siteLog.addEvent(currentTimestamp, details);
+		
 
 	}
 	/******************************************************************************************************
@@ -172,11 +181,12 @@ public class Site {
 	 * @return a list of latest committed values of all variables in string form, for the sake of print
 	 */
 	public String getVariableToString(){
-		String str = "";
-		for(Integer variableIndex: this.siteVariables.keySet()){
+		String str = ""+ "\t";
+		SortedSet<Integer> keys = new TreeSet<Integer>(this.siteVariables.keySet());
+		for(Integer variableIndex: keys){
 			Variable variable = this.siteVariables.get(variableIndex);
-			str = str + "\t" + "x" + variableIndex + "." + this.siteIndex + " => ";
-			str = str + variable.toStringLatestCommitted()+ "\n";
+			str = str + "x" + variableIndex + "." + this.siteIndex + "=";
+			str = str + variable.toStringLatestCommitted()+ " ";
 		}
 		return str;
 	}
@@ -202,7 +212,7 @@ public class Site {
 	 * @return the lock or null if not successful
 	 * 
   	 */
-	public Lock requestLock(int transactionNumber, int variableIndex, boolean isLockRequestReadOnly){
+	public Lock requestLock(int currentTimestamp, int transactionNumber, int variableIndex, boolean isLockRequestReadOnly){
 		Lock candidateLock = new Lock(transactionNumber, this.siteIndex, variableIndex, isLockRequestReadOnly);
 		for(Lock lock: this.activeLocks){
 			//Loop through all the active locks. 
@@ -217,7 +227,7 @@ public class Site {
 					&& lock.isReadOnly()
 					&& !isLockRequestReadOnly)){
 				
-				System.out.println((isLockRequestReadOnly?"Read":"Exclusive") +" Lock denied for T"+transactionNumber+"on x"+variableIndex+"."+siteIndex);
+				System.out.println((isLockRequestReadOnly?"Read":"Exclusive") +" Lock denied for T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
 				return null;
 				
 			}
@@ -225,8 +235,12 @@ public class Site {
 		//At this point, the check is successful and add the lock to the active locks
 		this.activeLocks.add(candidateLock);
 		
-		System.out.println((isLockRequestReadOnly?"Read":"Exclusive") +" Lock give to T"+transactionNumber+"on x"+variableIndex+"."+siteIndex);
+		System.out.println((isLockRequestReadOnly?"Read":"Exclusive") +" Lock give to T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
 
+		//Give lock and record in the site
+		String[] details = new String[]{"give lock",""+transactionNumber, ""+variableIndex, ""+isLockRequestReadOnly};
+		siteLog.addEvent(currentTimestamp, details);
+		
 		//Return the lock to the requesting transaction
 		return candidateLock;
 	}
@@ -235,12 +249,47 @@ public class Site {
 	 * Release all locks for a particular transaction from @activeLocks
 	 * @transactionNumber refers to the transaction in which his locks should be released
 	 */
-	public void releaseLocks(int transactionNumber){
+	public void releaseLocks(int transactionNumber, int currentTimestamp){
 		for(Lock lock: this.activeLocks){
 			if(lock.getTransactionNumber() == transactionNumber){
+				
+				System.out.println("Release lock from T"+transactionNumber+" on x"+lock.getLockedVariableIndex()+"."+siteIndex);
+				
+				//Give lock and record in the site
+				String[] details = new String[]{"release lock",""+transactionNumber, ""+lock.getLockedVariableIndex(), ""+lock.isReadOnly()};
+				siteLog.addEvent(currentTimestamp, details);
+				
 				this.activeLocks.remove(lock);
 			}
 		}
+	}
+	
+	/*
+	 * Return the lock that is conflicting with a hypothetical lock of the following properties:
+	 * @transactionNumber is the transaction number of the transaction requesting the lock
+	 * @variableIndex is the variable index the hypothetical lock would hold on
+	 * @isLockRequestReadOnly refers to the type of the hypothetical lock
+	 * @return the lock or null if not successful
+	 */
+	public Lock getConflictingLock(int transactionNumber, int variableIndex, boolean isLockRequestReadOnly){
+		for(Lock lock: this.activeLocks){
+			//Loop through all the active locks. 
+			
+			//If there is a conflicting lock  on @variableIndex, return that lock
+			if((lock.getTransactionNumber()!=transactionNumber
+					&& lock.getLockedVariableIndex()==variableIndex
+					&& !lock.isReadOnly())
+				|| 
+				(lock.getTransactionNumber()!=transactionNumber
+					&& lock.getLockedVariableIndex() == variableIndex
+					&& lock.isReadOnly()
+					&& !isLockRequestReadOnly)){
+				
+				return lock;
+				
+			}
+		}
+		return null;
 	}
 	
 }

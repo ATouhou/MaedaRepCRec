@@ -53,8 +53,10 @@ public class Parser {
 	 * i.e. [write, write params ...] = ["W", "1", "1", "101"]
 	 */
 	public String[] parseNextInstruction(String commandStr){
-		if(commandStr.contains("begin") && !commandStr.contains("beginRO")){
-			
+		if(commandStr.contains("//")){
+			return null;
+		}else if(commandStr.contains("begin") && !commandStr.contains("beginRO")){
+		
 			//Format: begin(T1)
 			String pattern = "begin\\s*\\(\\s*T(\\d+)\\s*\\)";
 			

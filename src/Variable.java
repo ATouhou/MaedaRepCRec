@@ -69,8 +69,9 @@ public class Variable {
 	 * now that there is a current new update to it Set lastCommittedVersion to the currentVersion
 	 * Add a before image and timestamp to the list of versions
 	 * @committingTransaction indicates which transaction is committing
+	 * @return the committed value
 	 */
-	public void commit(int committingTransaction){
+	public int commit(int committingTransaction){
 		//This means setting the versions written by the committing transaction and set that 
 		//as the current version
 		
@@ -85,6 +86,8 @@ public class Variable {
 		}
 		newCurrVersion.setCommitted();
 		this.lastCommittedVersion = newCurrVersion;
+		
+		return this.lastCommittedVersion.getValue();
 	}
 	/*
 	 * Update current version to value

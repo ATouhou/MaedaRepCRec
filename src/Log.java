@@ -3,11 +3,11 @@ import java.util.List;
 
 /*
  * The log keeps track of all actions on a site:
- * - read
- * - write
- * - commit
+ * - commit. details = ["commit", transactionNumber, variableIndex, valueCommitted]
  * - abort
- * - locks given/rejected
+ * - locks given. details = ["give lock",transactionNumber, variableIndex, isLockRequestReadOnly]
+ * - lock release. details = ["release lock",transactionNumber, variableIndex, isLockRequestReadOnly]
+ * - recover, fail
  */
 public class Log {
 	
@@ -19,9 +19,10 @@ public class Log {
 	public int findLastFailTimestamp(){
 		int timestampFind = -1;
 		//Iterate backwards
-		for(int i=logs.size()-1; i>=0; i++){
-			if(logs.get(i).details[0].equals("fail")){
-				return logs.get(i).timestamp;
+		for(int i=logs.size()-1; i>=0; i--){
+			Event event = logs.get(i);
+			if(event.details[0].equals("fail")){
+				return event.timestamp;
 			}
 		}
 		return timestampFind;
