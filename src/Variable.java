@@ -8,14 +8,9 @@ public class Variable {
 	//current version is the latest version, but the last committed version the latest committed version
 	private Version latestVersion = null;
 	private Version lastCommittedVersion = null;
-	//Don't need versions when everything is in the site's log
-	//private List<Version> versions = new ArrayList<Version>();
 	
 	// isAllowRead true, by default, until fail()
 	private boolean isAllowRead = true;
-	
-	// indicates whether there is a replication of itself at other sites
-	//private boolean isVariableReplicated; 
 	
 	//	isLock has access control by a semaphore i.e. synchronized, ensuring that only one write thread has access
 	// TODO: locks must be kept seperate from variable because there can be upgrades from read to write
@@ -32,6 +27,10 @@ public class Variable {
 			lastCommittedVersion = this.latestVersion;
 		}
 	}
+	/******************************************************************************************************
+	 * Read and writes and commit methods. The methods assume the Managers have already ensured the locks are there
+	 *  and protocols are followed. So no locks are used. These methods are called only by Site.
+	 ******************************************************************************************************/
 	/*
 	 * Read the version of this variable where the version's timestamp
 	 * is less than @timestampBefore i.e. read the COMMITTED version before @timestampBefore
@@ -66,23 +65,7 @@ public class Variable {
 		this.allVersions.add(this.latestVersion);
 	}
 	/*
-	 * Update current version to value
-	 * TODO: What is the timestamp of the final written value? The current
-	 * TODO: timestamp when it was written or the transaction's timestamp?
-	 */
-	/*private void writeToCurrentVersion(int value, int timestamp){
-		this.currentVersion = new Version(value, timestamp, -1);
-	}
-	/*
-	 * Set the currentVersion to the before image of t
-	 */
-	public void restoreBeforeImage(Transaction t){
-		//Set the currentVersion to the before image of t
-		//TODO: IOW, set currentVersion to the last committed value that happenned before t started
-	}
-	
-	/*
-	 * If isAllowRead = false, then set it to true, 
+	 * For recovery purposes, if Variable.isAllowRead = false, then set it to true, 
 	 * now that there is a current new update to it Set lastCommittedVersion to the currentVersion
 	 * Add a before image and timestamp to the list of versions
 	 * @committingTransaction indicates which transaction is committing
@@ -104,11 +87,23 @@ public class Variable {
 		this.lastCommittedVersion = newCurrVersion;
 	}
 	/*
-	 * Getter for the current latest version of the variable
+	 * Update current version to value
+	 * TODO: What is the timestamp of the final written value? The current
+	 * TODO: timestamp when it was written or the transaction's timestamp?
 	 */
-	/*public Version getLatestCommittedVersion(){
-		return this.lastCommittedVersion;
+	/*private void writeToCurrentVersion(int value, int timestamp){
+		this.currentVersion = new Version(value, timestamp, -1);
 	}
+	/*
+	 * Set the currentVersion to the before image of t
+	 */
+	public void restoreBeforeImage(Transaction t){
+		//Set the currentVersion to the before image of t
+		//TODO: IOW, set currentVersion to the last committed value that happenned before t started
+	}
+	/******************************************************************************************************
+	 * Setter, getter methods
+	 ******************************************************************************************************/
 	/*
 	 * toString function for Variable
 	 */
@@ -116,7 +111,9 @@ public class Variable {
 		return "Latest version:"+this.latestVersion.getTimestamp()+" " +this.latestVersion.getValue() + "\n"+
 				"Latest committed version:"+this.lastCommittedVersion.getTimestamp()+" "+this.lastCommittedVersion.getValue()+"\n";
 	}
-	
+	public String toStringLatestCommitted(){
+		return ""+this.lastCommittedVersion.getValue();
+	}
 	/*
 	 * Setter and getters for @isAllowRead
 	 */

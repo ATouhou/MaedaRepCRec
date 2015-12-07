@@ -38,6 +38,8 @@ public class TransactionManager {
 			ROTransaction roT = new ROTransaction(this.dataManager, transactionNumber, currentTimestamp );
 			this.activeTransactions.put(transactionNumber, roT);
 			
+			System.out.println("New ROTransaction: T"+transactionNumber);
+			
 		}else if(command[0].equals("begin")){
 			
 			// command = ["begin", transactionNum]
@@ -46,6 +48,8 @@ public class TransactionManager {
 			RWTransaction rwT = new RWTransaction(this.dataManager, transactionNumber, currentTimestamp);
 			this.activeTransactions.put(transactionNumber, rwT);
 			
+			System.out.println("New RWTransaction: T"+transactionNumber);
+
 		}else if(command[0].equals("W")){
 			
 			// command = ["W", transaction number, index variable, value to write]
@@ -120,6 +124,7 @@ public class TransactionManager {
 						//Add the index site to the command details
 						String[] modifyCommand = new String[]{command[0], command[1], command[2], siteIndex+""};
 						rwTransaction.processOperation("R", modifyCommand, currentTimestamp);
+												
 						isRead = true;
 						break;
 					}
@@ -135,6 +140,7 @@ public class TransactionManager {
 							
 							String[] modifyCommand = new String[]{command[0], command[1], command[2], siteIndex+""};
 							rwTransaction.processOperation("R", modifyCommand, currentTimestamp);
+														
 							isLockAcquired = true;
 							break;
 							
@@ -183,13 +189,34 @@ public class TransactionManager {
 				roTransaction.commit();
 			}
 			
+			//At end, remove this transaction from active transaction
+			this.activeTransactions.remove(transactionNumber);
+		}else if(command[0].equals("dump()")){
+			
+			//Give the committed values of all copies of all variables at all sites, sorted per site
+			this.dataManager.dump();
+			
+		}else if(command[0].equals("dumpSite")){
+			
+			//command = ["dumpSite", site Index]
+			int siteIndex = Integer.parseInt(command[1]);
+			//Gives the committed values of all copies of all variables at site i
+			this.dataManager.dumpSite(siteIndex);
+			
+		}else if(command[0].equals("dumpVariable")){
+			
+			//command = ["dumpSite", variable Index]
+			int variableIndex = Integer.parseInt(command[1]);
+			//Gives the committed values of all copies of variable xj at all sites
+			this.dataManager.dumpVariable(variableIndex);
+
 		}
 		/*
+		 * TODO:
 		If command = recover, Recover.recover(Site)
 		If command = fail,
 		Call Site.fail() for the site specified in the command
-		If command = dump,
-		for all Sites, Site.dump()
+		
 		*/
 	}
 	/*

@@ -33,8 +33,9 @@ public class ROTransaction implements Transaction{
 		List<Integer> siteIndexesToReadFrom  = this.dm.getAvailableSitesVariablesWhere(variableIndex);
 
 		//Read from any one site
-		Site siteToRead = this.dm.getSite(siteIndexesToReadFrom.get(0));
-		int readValue = siteToRead.getVariable(variableIndex).readCommitted(this.beginningTimestamp);
+		int readValue = this.dm.readCommitted(siteIndexesToReadFrom.get(0), variableIndex, this.beginningTimestamp);
+		//Site siteToRead = this.dm.getSite(siteIndexesToReadFrom.get(0));
+		//int readValue =siteToRead.getVariable(variableIndex).readCommitted(this.beginningTimestamp);
 		System.out.println(readValue);
 
 		//Add the site to list of accessed sites

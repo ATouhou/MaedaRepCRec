@@ -53,7 +53,7 @@ public class Parser {
 	 * i.e. [write, write params ...] = ["W", "1", "1", "101"]
 	 */
 	public String[] parseNextInstruction(String commandStr){
-		if(commandStr.startsWith("begin")){
+		if(commandStr.contains("begin") && !commandStr.contains("beginRO")){
 			
 			//Format: begin(T1)
 			String pattern = "begin\\s*\\(\\s*T(\\d+)\\s*\\)";
@@ -68,7 +68,7 @@ public class Parser {
 			//Get the transaction
 			return new String[]{"begin", m.group(1)};
 			
-		}else if(commandStr.startsWith("beginRO")){
+		}else if(commandStr.contains("beginRO")){
 			
 			//Format: beginRO(T3)
 			String pattern = "beginRO\\s*\\(\\s*T(\\d+)\\s*\\)";
@@ -83,7 +83,7 @@ public class Parser {
 			//Get the transaction
 			return new String[]{"beginRO", m.group(1)};
 			
-		}else if(commandStr.startsWith("R")){
+		}else if(commandStr.contains("R")){
 			
 			//Format: R(T1, x4)
 			String pattern = "R\\s*\\(\\s*T(\\d+)\\s*,\\s*x(\\d+)\\s*\\)";
@@ -98,7 +98,7 @@ public class Parser {
 			//Get the read information: instruction, transaction number, and index variable
 			return new String[]{"R", m.group(1), m.group(2)};
 			
-		}else if(commandStr.startsWith("W")){
+		}else if(commandStr.contains("W")){
 			
 			//Format: W(T1,x6,v); v is some number
 			String pattern = "W\\s*\\(\\s*T(\\d+)\\s*,\\s*x(\\d+)\\s*,\\s*(\\d+)\\s*\\)";
@@ -113,33 +113,41 @@ public class Parser {
 			//Get the write information: instruction, transaction number, index variable, value to write
 			return new String[]{"W", m.group(1), m.group(2), m.group(3)};
 			
-		}else if(commandStr.equals("dump()")){
+		}/*else if(commandStr.contains("dump()")){
 			
 			return new String[]{"dump()"};
 			
-		}else if(commandStr.startsWith("dump")){
+		}*/else if(commandStr.contains("dump")){
 			
-			//Format: dump(i) gives the committed values of all copies of all variables at site i.
-			//dump(xj) gives the committed values of all copies of variable xj at all sites.
+			//Format: 	dump(i) gives the committed values of all copies of all variables at site i.
+			//			dump(xj) gives the committed values of all copies of variable xj at all sites.
+			//			dump() gives the committed values of all copies of all variables at all sites, sorted per site 	
 			String pattern1 = "dump\\s*\\(\\s*(\\d+)\\s*\\)";
 			String pattern2 = "dump\\s*\\(\\s*x(\\d+)\\s*\\)";
+			String pattern3 = "dump\\s*\\(\\s*\\)";
 
 			// Create a Pattern object
 			Pattern r1 = Pattern.compile(pattern1);
 			Pattern r2 = Pattern.compile(pattern2);
+			Pattern r3 = Pattern.compile(pattern3);
 
 			// Now create matcher object.
 			Matcher m1 = r1.matcher(commandStr);
 			Matcher m2 = r2.matcher(commandStr);
+			Matcher m3 = r3.matcher(commandStr);
+
 			m1.find();
 			m2.find();
+			m3.find();
 
 			if(m1.matches())
 				return new String[]{"dumpSite", m1.group(1)};
-			else
+			else if(m2.matches())
 				return new String[]{"dumpVariable", m2.group(1)};
+			else
+				return new String[]{"dump()"};
 
-		}else if(commandStr.startsWith("end")){
+		}else if(commandStr.contains("end")){
 			
 			//Format:end(T1)
 			String pattern = "end\\s*\\(\\s*T(\\d+)\\s*\\)";
@@ -154,7 +162,7 @@ public class Parser {
 			//Get the end information: transaction number
 			return new String[]{"end", m.group(1)};
 			
-		}else if(commandStr.startsWith("fail")){
+		}else if(commandStr.contains("fail")){
 			
 			//Format: fail(6) 
 			String pattern = "fail\\s*\\(\\s*(\\d+)\\s*\\)";
@@ -169,7 +177,7 @@ public class Parser {
 			//Get the fail information: siteIndex
 			return new String[]{"fail", m.group(1)};
 			
-		}else if(commandStr.startsWith("recover")){
+		}else if(commandStr.contains("recover")){
 			
 			//Format: recover(7)
 			String pattern = "recover\\s*\\(\\s*(\\d+)\\s*\\)";

@@ -6,8 +6,11 @@ import java.util.Map;
 public class Site {
 	//Integer refers to the variable index
 	private Map<Integer, Variable> siteVariables = new HashMap<Integer, Variable>();
+	
 	private boolean isSiteDown = true;
-	//Nothing shal pass the site without the log knowing of it
+	
+	//Nothing shall pass the site without the log knowing of it
+	//TODO: add events to log
 	private Log siteLog;
 	
 	//Site index
@@ -16,7 +19,7 @@ public class Site {
 	//Each site has lockmanager
 	private LockManager lockmanager = new LockManager();
 	
-	List<Lock> activeLocks = new ArrayList<Lock>();
+	private List<Lock> activeLocks = new ArrayList<Lock>();
 
 	/*
 	 * Instantiates the site
@@ -25,7 +28,52 @@ public class Site {
 		this.siteIndex = siteIndex;
 		setSiteDown(false);
 	}
-	
+	/******************************************************************************************************
+	 * The following methods must be called by DataManager. 
+	 * This way the variables are not changed without locks or read without protocols.
+	 * Updates to the site log are done by these methods too.
+	 ******************************************************************************************************/
+	/*
+	 * Read the version of @variableIndex, where the version's timestamp
+	 * is less than @timestampBefore i.e. read the COMMITTED version before @timestampBefore.
+	 * This method is used by the multiversion protocol.
+	 * @variableIndex is the variable index to read, also given from DataManager.
+	 * @return is the value read
+	 */
+	public int readCommitted(int variableIndex, int timestampBefore){
+		return this.getVariable(variableIndex).readCommitted(timestampBefore);
+	}
+	/*
+	 * @variableIndex is the variable index to read, also given from DataManager.
+	 * @return the latest version, which may not necessarily be committed.
+	 */
+	public int readLatest(int variableIndex){
+		return this.getVariable(variableIndex).readLatest();
+	}
+	/*
+	 * When a currently active transaction writes to a variable, it create a new version.
+	 * @variableIndex is the variable index to write to,  given from DataManager.
+	 * @value is the new value
+	 * @currentTimestamp is the current timestamp
+	 * @transactionNumber is the current transaction doing this operation
+	 */
+	public void write(int variableIndex, int value, int currentTimestamp, int transactionNumber){
+		this.getVariable(variableIndex).write(value, currentTimestamp, transactionNumber);
+	}
+	/*
+	 * For recovery purposes, if Variable.isAllowRead = false, then set it to true, 
+	 * now that there is a current new update to it Set lastCommittedVersion to the currentVersion
+	 * Add a before image and timestamp to the list of versions
+	 * @variableIndex is the variable index, also given from Transaction.
+	 * @committingTransaction indicates which transaction is committing
+	 */
+	public void commit(int variableIndex, int committingTransaction){
+		this.getVariable(variableIndex).commit(committingTransaction);
+
+	}
+	/******************************************************************************************************
+	 *  Fail and recovery
+	 ******************************************************************************************************/
 	/*
 	 * Set all variable's Site.isAllowRead = false
 	 * All sites must release locks from living transactions that were also live at that site.
@@ -39,6 +87,9 @@ public class Site {
 		}
 		lockmanager.releaseSiteLock();
 	}
+	/******************************************************************************************************
+	 * Setter, getter, and dump method
+	 ******************************************************************************************************/
 	/*
 	 * @return String currentState for all Variables
 	 */
@@ -67,27 +118,11 @@ public class Site {
 	}
 	
 	/*
-	 * @variables is the new set of variables to replace the current one
-	 */
-	/*public void setVariablesAtSite(Map<Integer, Variable> variables){
-		this.siteVariables = variables;
-	}
-	
-	/*
 	 * @variableIndex is the index of the variable to find in this site
 	 * @return boolean indicating whether @variableIndex is in this sites
 	 */
 	public boolean isSiteContainVariableIndex(int variableIndex){
 		return this.siteVariables.containsKey(variableIndex);
-	}
-	
-	/*public Variable getCommittedVariable(int indexVariable){
-		for(int i=0; i<this.siteVariables.size(); i++){
-			if(this.siteVariables.get(i).getIndexVariable() == indexVariable ){
-				return this.siteVariables.get(i);
-			}
-		}
-		return null;
 	}
 	
 	/*
@@ -132,6 +167,34 @@ public class Site {
 		return this.siteVariables.get(variableIndex);
 	}
 
+
+	/*
+	 * @return a list of latest committed values of all variables in string form, for the sake of print
+	 */
+	public String getVariableToString(){
+		String str = "";
+		for(Integer variableIndex: this.siteVariables.keySet()){
+			Variable variable = this.siteVariables.get(variableIndex);
+			str = str + "\t" + "x" + variableIndex + "." + this.siteIndex + " => ";
+			str = str + variable.toStringLatestCommitted()+ "\n";
+		}
+		return str;
+	}
+	/*
+	 * @return the latest committed value of at variable index in string form, for the sake of print
+	 */
+	public String getVariableToString(int variableIndex){
+		String str = "";
+		Variable variable = this.siteVariables.get(variableIndex);
+		str = str + "\t" + "x" + variableIndex + "." + this.siteIndex + " => ";
+		str = str + variable.toStringLatestCommitted()+ "\n";
+		return str;
+	}
+	
+	
+	/******************************************************************************************************
+	 * The following methods are lock related.
+	 ******************************************************************************************************/
 	/*
 	 * Process a request of a lock for the variable with @variableIndex
 	 * @transactionNumber is the transaction number of the trasaction requesting the lock
@@ -153,12 +216,31 @@ public class Site {
 					&& lock.getLockedVariableIndex() == variableIndex
 					&& lock.isReadOnly()
 					&& !isLockRequestReadOnly)){
+				
+				System.out.println((isLockRequestReadOnly?"Read":"Exclusive") +" Lock denied for T"+transactionNumber+"on x"+variableIndex+"."+siteIndex);
 				return null;
+				
 			}
 		}
 		//At this point, the check is successful and add the lock to the active locks
 		this.activeLocks.add(candidateLock);
+		
+		System.out.println((isLockRequestReadOnly?"Read":"Exclusive") +" Lock give to T"+transactionNumber+"on x"+variableIndex+"."+siteIndex);
+
 		//Return the lock to the requesting transaction
 		return candidateLock;
 	}
+	
+	/*
+	 * Release all locks for a particular transaction from @activeLocks
+	 * @transactionNumber refers to the transaction in which his locks should be released
+	 */
+	public void releaseLocks(int transactionNumber){
+		for(Lock lock: this.activeLocks){
+			if(lock.getTransactionNumber() == transactionNumber){
+				this.activeLocks.remove(lock);
+			}
+		}
+	}
+	
 }

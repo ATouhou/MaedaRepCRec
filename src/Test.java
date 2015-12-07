@@ -4,7 +4,7 @@ public class Test {
 	//TODO:Each function, input, output, side affects
 	//TODO:Bitbucket and add viswanath
 	public static void main(String[] args){
-		String inputfile = System.getProperty("user.dir")+"/projectsampletests.txt";
+		String inputfile = System.getProperty("user.dir")+"/TestCases/test1.txt";
 		if (args.length > 0) {
 			inputfile = args[0];
 	

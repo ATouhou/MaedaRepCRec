@@ -1,7 +1,5 @@
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RWTransaction implements Transaction{
 	private boolean isReadOnly = false;
@@ -20,6 +18,7 @@ public class RWTransaction implements Transaction{
 	private List<Integer> sitesIndexesAccessed = new ArrayList<Integer>();
 	
 	//Pairs of site indexes and variable indexes that the transaction has accessed
+	//i.e. [ {site index 1, variable index 3}, {...}, ... ]
 	private List<Integer[]> sitesIndexesVariableIndexesAccessed = new ArrayList<Integer[]>();
 		
 	/*
@@ -48,11 +47,18 @@ public class RWTransaction implements Transaction{
 			List<Integer> siteIndexesToWrite  = this.dm.getAvailableSitesVariablesWhere(variableIndex);
 			
 			for(Integer siteIndex: siteIndexesToWrite){
-				dm.getSite(siteIndex).getVariable(variableIndex).write(valueToWrite, currentTimestamp, transactionNumber);
+				//dm.getSite(siteIndex).getVariable(variableIndex).write(valueToWrite, currentTimestamp, transactionNumber);
+				dm.write(siteIndex, variableIndex, valueToWrite, currentTimestamp, transactionNumber);
 				
+				System.out.println("T"+this.transactionNumber+" write "+valueToWrite+" to x"+variableIndex+"."+siteIndex);
+
 				//Record the accessed sites
 				if(!this.sitesIndexesAccessed.contains(siteIndex)){
 					this.sitesIndexesAccessed.add(siteIndex);
+				}
+				
+				if(!this.sitesIndexesVariableIndexesAccessed.contains(new Integer[]{siteIndex, variableIndex})){
+					sitesIndexesVariableIndexesAccessed.add(new Integer[]{siteIndex, variableIndex});
 				}
 			}
 			
@@ -64,11 +70,17 @@ public class RWTransaction implements Transaction{
 			int variableIndex = Integer.parseInt(command[2]);
 			
 			//Read the latest version, which may not necessarily be committed
-			dm.getSite(siteIndexToReadFrom).getVariable(variableIndex).readLatest();
-
+			//dm.getSite(siteIndexToReadFrom).getVariable(variableIndex).readLatest();
+			int readValue = this.dm.readLatest(siteIndexToReadFrom,variableIndex );
+			System.out.println("T"+this.transactionNumber+" read "+readValue);
+			
 			//Record the accessed sites
 			if(!this.sitesIndexesAccessed.contains(siteIndexToReadFrom)){
 				this.sitesIndexesAccessed.add(siteIndexToReadFrom);
+			}
+			
+			if(!this.sitesIndexesVariableIndexesAccessed.contains(new Integer[]{siteIndexToReadFrom, variableIndex})){
+				sitesIndexesVariableIndexesAccessed.add(new Integer[]{siteIndexToReadFrom, variableIndex});
 			}
 		}
 		
@@ -110,12 +122,22 @@ public class RWTransaction implements Transaction{
 	@Override
 	public void commit() {
 		//At commit, the transaction informs all the variables to commit
+		for(Integer[] siteXVariableAccessed: this.sitesIndexesVariableIndexesAccessed){
+			int siteIndex = siteXVariableAccessed[0];
+			int variableIndex = siteXVariableAccessed[1];
+			
+			this.dm.commit(siteIndex, variableIndex, transactionNumber);
+		}
 	}
 	
+	/*
+	 * On abort, nothing should be committed, i.e. any changes done in the database musn't be reflected in the actual database
+	 */
 	@Override
 	public void abort() {
-		// TODO Auto-generated method stub
+		// TODO: should we delete the version written by this transaction?
 		
+	
 	}
 	
 	@Override
@@ -123,9 +145,10 @@ public class RWTransaction implements Transaction{
 		//When releasing the locks, the transaction informs the sites about the releasing the locks
 		//The transaction sets its own set of locks to null
 		for(Integer siteAccessedIndex: this.sitesIndexesAccessed){
-			this.dm.getSite(siteAccessedIndex).
+			this.dm.getSite(siteAccessedIndex).releaseLocks(transactionNumber);
 		}
 		
+		this.locks = new ArrayList<Lock>();
 	}
 
 	@Override
