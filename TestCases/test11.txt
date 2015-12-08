@@ -8,3 +8,7 @@ R(T1,x2)
 R(T2,x2)
 W(T2,x2,10)
 end(T1)
+dump(x2)
+//T1 reads x2 = 20
+//T2 reads x2 = 20
+// x2 = 20 after T1 and T2

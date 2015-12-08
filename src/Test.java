@@ -7,7 +7,7 @@ public class Test {
 	//the general description of the function, the inputs, the outputs, and the side effects.
 	//TODO: In addition, you should provide a few testing scripts in plain text to the grader in the format above and say what you believe will happen in each test.
 	public static void main(String[] args){
-		String inputfile = System.getProperty("user.dir")+"/TestCases/test11.txt";
+		String inputfile = System.getProperty("user.dir")+"/TestCases/test12.txt";
 		if (args.length > 0) {
 			inputfile = args[0];
 	
