@@ -9,3 +9,7 @@ R(T3,x4)
 end(T2)
 R(T1,x2)
 end(T1)
+dump(x2)
+dump(x4)
+// x2 = 20 after T3
+// x4 = 44 after T2
