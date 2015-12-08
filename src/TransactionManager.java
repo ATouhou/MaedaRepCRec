@@ -352,7 +352,9 @@ public class TransactionManager {
 		List<Integer> sitesAccessed = transaction.getSiteIndexesAccessed();
 		for(int key: sitesAccessed){
 			//If one of the sites has failed, then return false
-			this.dataManager.getSite(key).isSiteDownAfter(transaction.getBeginningTimestamp());
+			if(this.dataManager.getSite(key).isSiteDownAfter(transaction.getBeginningTimestamp())){
+				return false;
+			}
 			
 		}
 		return true;

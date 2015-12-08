@@ -41,12 +41,14 @@ public class Variable {
 	 * @return is the value read
 	 */
 	public int readCommitted(int timestampBefore){
-		//Search the versions backwards
-		for(int i=this.allVersions.size()-1; i>=0; i--){
-			if(debug) System.out.println("Variable: Read is trying to find last committed version "+allVersions.get(i).toString());
-			
-			if(allVersions.get(i).isCommitted() && allVersions.get(i).getTimestamp()<timestampBefore){
-				return this.allVersions.get(i).getValue();
+		if(this.isAllowRead){
+			//Search the versions backwards
+			for(int i=this.allVersions.size()-1; i>=0; i--){
+				if(debug) System.out.println("Variable: Read is trying to find last committed version "+allVersions.get(i).toString());
+				
+				if(allVersions.get(i).isCommitted() && allVersions.get(i).getTimestamp()<timestampBefore){
+					return this.allVersions.get(i).getValue();
+				}
 			}
 		}
 		return -1;
@@ -55,7 +57,10 @@ public class Variable {
 	 * @return the latest version, which may not necessarily be committed
 	 */
 	public int readLatest(){
-		return this.allVersions.get(this.lastCommittedVersion).getValue();
+		if(this.isAllowRead){
+			return this.allVersions.get(this.lastCommittedVersion).getValue();
+		}
+		return -1;
 	}
 	/*
 	 * When a currently active transaction writes to a variable, it create a new version

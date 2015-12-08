@@ -180,6 +180,7 @@ public class RWTransaction implements Transaction{
 			
 			this.dm.commit(siteIndex, variableIndex, transactionNumber, currentTimestamp, transactionNumber);
 		}
+		//The transaction releases its locks
 		releaseLocks( currentTimestamp);
 
 	}
@@ -200,6 +201,7 @@ public class RWTransaction implements Transaction{
 	public void releaseLocks(int currentTimestamp) {
 		//When releasing the locks, the transaction informs the sites about the releasing the locks
 		//The transaction sets its own set of locks to null
+		System.out.println("RWTran: T"+this.transactionNumber+" accessed "+this.sitesIndexesAccessed);
 		for(Integer siteAccessedIndex: this.sitesIndexesAccessed){
 			this.dm.getSite(siteAccessedIndex).releaseLocks(transactionNumber, currentTimestamp);
 		}

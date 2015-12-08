@@ -50,6 +50,7 @@ public class Site {
 	}
 	/*
 	 * @variableIndex is the variable index to read, also given from DataManager.
+	 * TODO: @lock is the lock that gives access to the variable
 	 * @return the latest version, which may not necessarily be committed.
 	 */
 	public int readLatest(int variableIndex){
@@ -104,6 +105,8 @@ public class Site {
 		String[] details = new String[]{"fail"};
 		siteLog.addEvent(currentTimestamp, details);
 		
+		System.out.println("Site: fail site "+this.getSiteIndex());
+
 	}
 	/*
 	 * Recover this site.
@@ -117,6 +120,8 @@ public class Site {
 	 *  Record the recovery in the site's log.
 	 */
 	public void recover(int currentTimestamp){
+		System.out.println("Site: recover site "+this.getSiteIndex());
+		
 		//For all Variables at x, if the variable is not replicated at any other sites, then Variable.isAllowRead = true.
 		//This allows reads to a variable not replicated anywhere else. 
 		for(Variable variable: this.siteVariables.values()){
@@ -360,7 +365,10 @@ public class Site {
 				
 				this.activeLocks.remove(lock);
 			}else{
+				System.out.println("Site: Lock not released on x"+lock.getLockedVariableIndex()+"."+siteIndex+" held by T"+lock.getTransactionNumber());
+
 				i++;
+				
 			}
 		}
 	}

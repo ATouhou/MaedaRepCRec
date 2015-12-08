@@ -3,7 +3,7 @@ public class Test {
 	//TODO:General description (see syllabus)
 	//TODO:Each function, input, output, side affects
 	public static void main(String[] args){
-		String inputfile = System.getProperty("user.dir")+"/TestCases/test3.txt";
+		String inputfile = System.getProperty("user.dir")+"/TestCases/test4.txt";
 		if (args.length > 0) {
 			inputfile = args[0];
 	
