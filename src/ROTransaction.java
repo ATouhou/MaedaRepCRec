@@ -39,7 +39,7 @@ public class ROTransaction implements Transaction{
 		int readValue = this.dm.readCommitted(siteIndexesToReadFrom.get(0), variableIndex, this.beginningTimestamp);
 		//Site siteToRead = this.dm.getSite(siteIndexesToReadFrom.get(0));
 		//int readValue =siteToRead.getVariable(variableIndex).readCommitted(this.beginningTimestamp);
-		System.out.println(readValue);
+		System.out.println("ROTran: "+readValue);
 
 		//Add the site to list of accessed sites
 		sitesIndexesAccessed.add(siteIndexesToReadFrom.get(0));
@@ -63,9 +63,9 @@ public class ROTransaction implements Transaction{
 	}
 	
 	@Override
-	public void abort() {
+	public void abort(int currentTimestamp) {
 		//Abort is never called in read-only transactions
-		System.out.println("T"+this.transactionNumber+" aborted.");
+		System.out.println("ROTran: T"+this.transactionNumber+" aborted.");
 
 	}
 
@@ -90,6 +90,14 @@ public class ROTransaction implements Transaction{
 		return this.isReadOnly;
 	}
 	@Override
+	public int getTransactionNumber() {
+		return this.transactionNumber;
+	}
+	/******************************************************************************************************
+	 * Related to queuing. Since this transaction is read only, there is nothing stopping this transaction.
+	 ******************************************************************************************************/
+	
+	@Override
 	public List<String[]> getQueuedOperations() {
 		return this.queuedOperations;
 	}
@@ -101,6 +109,23 @@ public class ROTransaction implements Transaction{
 	public void removeQueuedOperation(String[] queuedOperations) {
 		this.queuedOperations.remove(queuedOperations);
 	}
+	@Override
+	public boolean isWaiting() {
+		return false;
+	}
+	@Override
+	public int getTransactionWaitFor() {
+		return -1;
+	}
+	@Override
+	public void setToWaitFor(int transactionNumWait) {
+	}
+	@Override
+	public void setTransactionToActive() {
+		
+	}
+	
+	
 	 
 	
 	

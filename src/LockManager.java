@@ -12,17 +12,6 @@ public class LockManager {
 		this.liveTransactions = new ArrayList<Transaction>();
 	}
 	
-	/*
-	 * TODO:During shut down, the table is erased
-	 */
-	public void eraseTable(){
-		//lockTable = new Ar;
-	}
-	
-	public void requestLock(){
-		
-	}
-	
 	
 	 
 }

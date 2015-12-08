@@ -1,10 +1,10 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RWTransaction implements Transaction{
 	private boolean isReadOnly = false;
 	private DataManager dm = null; 
-	private boolean isWait = false;
 	
 	//List of locks the transaction owns; this list reflects the lock tables on the sites
 	List<Lock> locks = new ArrayList<Lock>();
@@ -24,7 +24,11 @@ public class RWTransaction implements Transaction{
 	//A list of commands, where command has the same format as the output of Parser.parseNextInstruction()
 	//The latest queued operation is at the end of the list
 	private List<String[]> queuedOperations = new ArrayList<String[]>();
-		
+
+	//Since the waits for graph is acyclic due to wait-die, there can at most be one transaction that this transaction is waiting for
+	//If this value is -1, then this transaction is active.
+	private int waitForTransaction = -1;
+
 	/*
 	 * Instantiates the read-write transaction
 	 */
@@ -54,7 +58,7 @@ public class RWTransaction implements Transaction{
 				//dm.getSite(siteIndex).getVariable(variableIndex).write(valueToWrite, currentTimestamp, transactionNumber);
 				dm.write(siteIndex, variableIndex, valueToWrite, currentTimestamp, transactionNumber);
 				
-				System.out.println("T"+this.transactionNumber+" write "+valueToWrite+" to x"+variableIndex+"."+siteIndex);
+				System.out.println("RWTran: T"+this.transactionNumber+" write "+valueToWrite+" to x"+variableIndex+"."+siteIndex);
 
 				//Record the accessed sites
 				if(!this.sitesIndexesAccessed.contains(siteIndex)){
@@ -76,7 +80,7 @@ public class RWTransaction implements Transaction{
 			//Read the latest version, which may not necessarily be committed
 			//dm.getSite(siteIndexToReadFrom).getVariable(variableIndex).readLatest();
 			int readValue = this.dm.readLatest(siteIndexToReadFrom,variableIndex );
-			System.out.println("T"+this.transactionNumber+" read "+readValue);
+			System.out.println("RWTran: T"+this.transactionNumber+" read "+readValue);
 			
 			//Record the accessed sites
 			if(!this.sitesIndexesAccessed.contains(siteIndexToReadFrom)){
@@ -136,12 +140,16 @@ public class RWTransaction implements Transaction{
 	
 	/*
 	 * On abort, nothing should be committed, i.e. any changes done in the database musn't be reflected in the actual database
+	 * Locks must be released
 	 */
 	@Override
-	public void abort() {
+	public void abort(int currentTimestamp) {
 		// TODO: should we delete the version written by this transaction?
-		System.out.println("T"+this.transactionNumber+" aborted.");
-	
+		System.out.println("RWTran: T"+this.transactionNumber+" aborted.");
+		for(Lock lock: this.locks){
+			int siteLock = lock.getSiteIndex();
+			this.dm.getSite(siteLock).releaseLocks(siteLock, currentTimestamp);
+		}
 	}
 	
 	@Override
@@ -175,16 +183,40 @@ public class RWTransaction implements Transaction{
 	public boolean getReadOnly() {
 		return this.isReadOnly;
 	}
+	@Override
+	public int getTransactionNumber() {
+		return this.transactionNumber;
+	}
+	/******************************************************************************************************
+	 * Related to queuing. 
+	 ******************************************************************************************************/
 	public List<String[]> getQueuedOperations() {
 		return queuedOperations;
 	}
 	@Override
 	public void addQueuedOperation(String[] queuedOperations) {
+		System.out.println("RWTran: Queue T"+this.transactionNumber+" operations "+Arrays.toString(queuedOperations));
 		this.queuedOperations.add(queuedOperations);
 	}
 	@Override
 	public void removeQueuedOperation(String[] queuedOperations) {
 		this.queuedOperations.remove(queuedOperations);
+	}
+	@Override
+	public boolean isWaiting() {
+		return waitForTransaction!=-1?  true :  false;
+	}
+	@Override
+	public int getTransactionWaitFor() {
+		return this.waitForTransaction;
+	}
+	@Override
+	public void setToWaitFor(int transactionNumWait) {
+		this.waitForTransaction = transactionNumWait;
+	}
+	@Override
+	public void setTransactionToActive() {
+		this.waitForTransaction = -1;
 	}
 	
 	

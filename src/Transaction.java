@@ -12,6 +12,8 @@ public interface Transaction {
 	void setReadOnly(boolean input);
 	boolean getReadOnly();
 	
+	int getTransactionNumber();
+	
 	//Integer refers to the site index
 	Map<Integer, Site> siteAccessed = new HashMap<Integer, Site>();
 	
@@ -21,7 +23,7 @@ public interface Transaction {
 	
 	void commit(int currentTimestamp);
 	
-	void abort();
+	void abort(int currentTimestamp);
 	
 	List<Integer> getSiteIndexesAccessed();
 	
@@ -32,5 +34,18 @@ public interface Transaction {
 	List<String[]> getQueuedOperations();
 	void addQueuedOperation(String[] queuedOperations);
 	void removeQueuedOperation(String[] queuedOperations);
+	
+	//Information on whether this transaction is waiting
+	boolean isWaiting();
+	
+	//Get the transaction number of the transaction holding this transaction back
+	//i.e. if transaction 1 waits for transaction 2, then transaction 1's getTransactionWaitFor() = 2
+	int getTransactionWaitFor();
+	
+	//@transactionNumWait is the number that is causing this transaction to wait
+	void setToWaitFor(int transactionNumWait);
+	
+	//Set the transaction to active
+	void setTransactionToActive();
 
 }

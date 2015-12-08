@@ -28,7 +28,7 @@ public class Parser {
 		    	//divide the line by semicolons
 		    	String[] lineParts = line.split(";");
 		    	for(String aPart: lineParts){
-			    	System.out.println(aPart);
+			    	System.out.println("Parser:"+aPart);
 
 			    	// process the partial line.
 			    	String[] commands = parseNextInstruction(aPart);

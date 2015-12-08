@@ -227,7 +227,7 @@ public class Site {
 					&& lock.isReadOnly()
 					&& !isLockRequestReadOnly)){
 				
-				System.out.println((isLockRequestReadOnly?"Read":"Exclusive") +" Lock denied for T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
+				System.out.println("Site: "+(isLockRequestReadOnly?"Read":"Exclusive") +" Lock denied for T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
 				return null;
 				
 			}
@@ -235,7 +235,7 @@ public class Site {
 		//At this point, the check is successful and add the lock to the active locks
 		this.activeLocks.add(candidateLock);
 		
-		System.out.println((isLockRequestReadOnly?"Read":"Exclusive") +" Lock give to T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
+		System.out.println("Site: "+(isLockRequestReadOnly?"Read":"Exclusive") +" Lock give to T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
 
 		//Give lock and record in the site
 		String[] details = new String[]{"give lock",""+transactionNumber, ""+variableIndex, ""+isLockRequestReadOnly};
@@ -253,7 +253,7 @@ public class Site {
 		for(Lock lock: this.activeLocks){
 			if(lock.getTransactionNumber() == transactionNumber){
 				
-				System.out.println("Release lock from T"+transactionNumber+" on x"+lock.getLockedVariableIndex()+"."+siteIndex);
+				System.out.println("Site: Release lock from T"+transactionNumber+" on x"+lock.getLockedVariableIndex()+"."+siteIndex);
 				
 				//Give lock and record in the site
 				String[] details = new String[]{"release lock",""+transactionNumber, ""+lock.getLockedVariableIndex(), ""+lock.isReadOnly()};

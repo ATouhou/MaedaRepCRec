@@ -144,7 +144,7 @@ public class DataManager {
 		SortedSet<Integer> keys = new TreeSet<Integer>(this.allSites.keySet());
 		for(Integer siteIndex: keys){
 			Site site = this.allSites.get(siteIndex);
-			System.out.println("Site Index: "+siteIndex);
+			System.out.println("DM: Site Index: "+siteIndex);
 			System.out.println(site.getVariableToString());
 		}
 	}
@@ -153,7 +153,7 @@ public class DataManager {
 	 */
 	public void dumpSite(int i){
 		Site site = this.allSites.get(i);
-		System.out.println("Site Index: "+i);
+		System.out.println("DM: Site Index: "+i);
 		System.out.println("\tVariables in site "+i+": "+site.getVariableToString());
 	}
 	/*
@@ -164,7 +164,7 @@ public class DataManager {
 		SortedSet<Integer> keys = new TreeSet<Integer>(this.allSites.keySet());
 		for(Integer siteIndex: keys){
 			Site site = this.allSites.get(siteIndex);
-			System.out.println("Site Index: "+siteIndex);
+			System.out.println("DM: Site Index: "+siteIndex);
 			System.out.println("\tVariables in site "+siteIndex+": "+site.getVariableToString(xj));
 		}
 	}
