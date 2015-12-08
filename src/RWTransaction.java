@@ -112,9 +112,9 @@ public class RWTransaction implements Transaction{
 	}
 	
 	/*
-	 * @return whether this transaction has the read lock on  @variableIndex at @siteIndex
+	 * @return whether this transaction has the read/write lock on  @variableIndex at @siteIndex
 	 */
-	public boolean isHasReadLock(int siteIndex, int variableIndex){
+	public boolean isHasReadOrWriteLock(int siteIndex, int variableIndex){
 		for(Lock locks: this.locks){
 			//Find a match for a lock based on @siteIndex and @variableIndex
 			//Don't have to check for the type of the lock, because a write lock is good as well
@@ -128,6 +128,41 @@ public class RWTransaction implements Transaction{
 		return false;
 	}
 
+	/*
+	 * @return whether this transaction has a read only lock on @variableIndex at @siteIndex
+	 */
+	public boolean isHasReadOnlyLock(int siteIndex, int variableIndex){
+		for(Lock locks: this.locks){
+			//Find a match for a lock based on @siteIndex and @variableIndex
+			//Don't have to check for the type of the lock, because a write lock is good as well
+			if(locks.getTransactionNumber()==this.transactionNumber 
+					&& locks.getSiteIndex()==siteIndex
+					&& locks.getLockedVariableIndex()==variableIndex
+					&& locks.isReadOnly()
+					){
+				return true;
+			}
+		}
+		return false;
+	}
+	/*
+	 * Upgrade a read lock to a write lock.
+	 * @transactionNumber, @siteIndex, @variableIndex are values of the lock
+	 */
+	public void upgradeLock(int transactionNumber, int siteIndex, int variableIndex){
+		//Find the lock with the given parameters
+		for(int i=0; i<this.locks.size(); i++){
+			Lock lockToUpgrade = this.locks.get(i);
+			if(lockToUpgrade.getTransactionNumber()==transactionNumber
+					&& lockToUpgrade.getSiteIndex()==siteIndex
+					&& lockToUpgrade.getLockedVariableIndex()==variableIndex){
+				//Change the locks
+				this.locks.get(i).setIsReadOnly(false);
+				return;
+				
+			}
+		}
+	}
 	/*
 	 * @lock is the lock given by the Transaction Manager
 	 */

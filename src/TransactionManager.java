@@ -174,8 +174,19 @@ public class TransactionManager {
 			
 			for(Integer siteIndex: siteIndexesToWrite){
 				if(!currentTransaction.isHasWriteLock(siteIndex, variableIndex)){
-					//Acquire a write lock from the site's lock manager
-					Lock lock = this.dataManager.getSite(siteIndex).requestLock(currentTimestamp, transactionNumber, variableIndex, false);
+					
+					Lock lock = null;
+					//If the transaction does have a read lock on the data, then upgrade from read to write lock
+					 
+					if(currentTransaction.isHasReadOnlyLock(siteIndex, variableIndex)){
+						//Request an upgrade from the site's lock manager
+						//Upgrade the lock in the transaction
+						lock = this.dataManager.getSite(siteIndex).upgradeRequest(currentTimestamp, transactionNumber, variableIndex);
+						currentTransaction.upgradeLock(transactionNumber, siteIndex, variableIndex);
+					}else{
+						//Acquire a write lock from the site's lock manager
+						lock = this.dataManager.getSite(siteIndex).requestLock(currentTimestamp, transactionNumber, variableIndex, false);
+					}
 					
 					//If the lock was not acquired, then either wait or die, based on the timestamps of the 
 					//conflicting transactions
@@ -250,7 +261,7 @@ public class TransactionManager {
 				
 				boolean isRead = false;
 				for(Integer siteIndex: siteIndexesToWrite){
-					if(rwTransaction.isHasReadLock(siteIndex, variableIndex)){
+					if(rwTransaction.isHasReadOrWriteLock(siteIndex, variableIndex)){
 						//Once a read lock has been found, then read it, and then stop.
 						
 						//Add the index site to the command details
@@ -266,7 +277,7 @@ public class TransactionManager {
 					//If no read is done, because there aren't any locks, acquire a lock on any one site
 					boolean isLockAcquired = false;
 					for(Integer siteIndex: siteIndexesToWrite){
-						Lock lock = this.dataManager.getSite(siteIndex).requestLock(currentTimestamp, transactionNumber, variableIndex, false);
+						Lock lock = this.dataManager.getSite(siteIndex).requestLock(currentTimestamp, transactionNumber, variableIndex, true);
 						if(lock!=null){
 							
 							String[] modifyCommand = new String[]{command[0], command[1], command[2], siteIndex+""};

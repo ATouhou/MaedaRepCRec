@@ -244,7 +244,48 @@ public class Site {
 		//Return the lock to the requesting transaction
 		return candidateLock;
 	}
-	
+	/*
+	 * Process an upgrade request of a lock from read to exclusive for the variable with @variableIndex
+	 * @transactionNumber is the transaction number of the transaction requesting the lock
+	 * @return the lock or null if not successful
+	 * 
+	 */
+	public Lock upgradeRequest(int currentTimestamp, int transactionNumber, int variableIndex){
+		Lock candidateLock = new Lock(transactionNumber, this.siteIndex, variableIndex, false);
+		for(Lock lock: this.activeLocks){
+			//Loop through all the active locks. 
+			//If there is a write lock already on @variableIndex, no other transaction may access it, so return null
+			//If a different transaction has a read lock and the requesting lock is a write lock, do not give the lock i.e. return null
+			if((lock.getTransactionNumber()!=transactionNumber
+					&& lock.getLockedVariableIndex()==variableIndex
+					&& !lock.isReadOnly())){
+				System.out.println("Site: T"+transactionNumber+" found conflicting lock held by T"+lock.getTransactionNumber());
+				System.out.println("Site: Exclusive Lock denied for T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
+				return null;
+				
+			}
+		}
+		
+		//If successful, remove the lock from the activeLocks and add the candidate to the activeLocks
+		int index =0;
+		while(index<this.activeLocks.size()){
+			if(this.activeLocks.get(index).getLockedVariableIndex()==variableIndex &&
+					this.activeLocks.get(index).getTransactionNumber()==transactionNumber){
+				this.activeLocks.remove(index);
+				break;
+			}
+		}
+		this.activeLocks.add(candidateLock);
+		
+		System.out.println("Site: Exclusive Lock give to T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
+
+		//Give lock and record in the site
+		String[] details = new String[]{"give lock",""+transactionNumber, ""+variableIndex, ""+false};
+		siteLog.addEvent(currentTimestamp, details);
+		
+		return candidateLock;
+
+	}
 	/*
 	 * Release all locks for a particular transaction from @activeLocks
 	 * @transactionNumber refers to the transaction in which his locks should be released

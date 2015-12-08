@@ -10,3 +10,4 @@ W(T1, x5,91)
 end(T2)
 recover(2)
 end(T1)
+//Does T2 ever write to x2 after site 2 recovers? No, since according to the available copies algorithm, just write to the ones you can write to.
