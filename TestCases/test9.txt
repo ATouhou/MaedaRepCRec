@@ -10,3 +10,11 @@ end(T2)
 end(T3)
 R(T1,x2)
 end(T1)
+dump(x2)
+dump(x4)
+dump(5)
+dump(3)
+// x2 = 22 after T3
+// x4 = 44 after T2
+// T3 reads x4 = 44
+// T1 reads x2 = 22

@@ -12,3 +12,6 @@ R(T1, x5)
 end(T2)
 recover(2)
 end(T1)
+dump(x8)
+// x8=88 after T2
+// T2 reads x3=30 

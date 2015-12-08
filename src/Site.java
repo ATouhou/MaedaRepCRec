@@ -262,8 +262,12 @@ public class Site {
 	public String getVariableToString(int variableIndex){
 		String str = "";
 		Variable variable = this.siteVariables.get(variableIndex);
-		str = str + "\t" + "x" + variableIndex + "." + this.siteIndex + " => ";
-		str = str + variable.toStringLatestCommitted()+ "\n";
+		if(variable!=null){
+			str = str + "\t" + "x" + variableIndex + "." + this.siteIndex + " => ";
+			str = str + variable.toStringLatestCommitted()+ "\n";
+		}else{
+			str = str + "\t" + "x" + variableIndex + "." + this.siteIndex + " => Not exists\n";
+		}
 		return str;
 	}
 	/*

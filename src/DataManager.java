@@ -164,10 +164,11 @@ public class DataManager {
 	public void dumpVariable(int xj){
 		//Go through each site
 		SortedSet<Integer> keys = new TreeSet<Integer>(this.allSites.keySet());
+		System.out.println("DM: ");
 		for(Integer siteIndex: keys){
 			Site site = this.allSites.get(siteIndex);
-			System.out.println("DM: Site Index: "+siteIndex);
-			System.out.println("\tVariables in site "+siteIndex+": "+site.getVariableToString(xj));
+			System.out.print(" "+site.getVariableToString(xj));
 		}
+		System.out.println();
 	}
 }

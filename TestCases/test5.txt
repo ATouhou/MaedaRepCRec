@@ -9,3 +9,8 @@ R(T1, x5)
 end(T2)
 recover(2)
 end(T1)
+dump(x6)
+dump(x8)
+dump(x5)
+dump(x3)
+// At the end, x6 = 60, x8 = 88, x3 = 30, x5 = 50

@@ -6,8 +6,8 @@ public class Version {
 	private int timestamp = -1;
 	
 	//This indicates which transaction wrote to this version
-	//-1 transactionNumbe indicates it was the DataManager.load() that loaded it
-	private int fromTransactionNumber = -1;
+	//0 transactionNumbe indicates it was the DataManager.load() that loaded it
+	private int fromTransactionNumber = 0;
 	
 	//Is this version committed?
 	private boolean isCommitted = false;
@@ -40,6 +40,6 @@ public class Version {
 	}
 	
 	public String toString(){
-		return "Version(value="+value+", timestamp="+timestamp+",isCommitted="+isCommitted+")";
+		return "Version(value="+value+", timestamp="+timestamp+",isCommitted="+isCommitted+", fromTransNum="+this.fromTransactionNumber+")";
 	}
 }

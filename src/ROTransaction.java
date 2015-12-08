@@ -40,7 +40,7 @@ public class ROTransaction implements Transaction{
 
 		//Read from any one site
 		int readValue = this.dm.readCommitted(siteIndexesToReadFrom.get(0), variableIndex, this.beginningTimestamp);
-		System.out.println("ROTran: "+readValue);
+		System.out.println("ROTran: T"+transactionNumber+" reads "+readValue);
 
 		//Add the site to list of accessed sites
 		sitesIndexesAccessed.add(siteIndexesToReadFrom.get(0));

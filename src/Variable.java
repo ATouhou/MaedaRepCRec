@@ -23,7 +23,7 @@ public class Variable {
 	
 	public Variable(int indexVariable, int value, int timestamp, boolean isCommitted){
 		this.setIndexVariable(indexVariable);
-		this.allVersions.add(new Version(value, timestamp, -1, isCommitted));
+		this.allVersions.add(new Version(value, timestamp, 0, isCommitted));
 		this.latestVersion = this.allVersions.size()-1;
 
 		if(isCommitted){
@@ -84,29 +84,51 @@ public class Variable {
 	public int commit(int committingTransaction){
 		//This means setting the versions written by the committing transaction and set that 
 		//as the current version
-		
+		if(debug) System.out.println("Variable: Committing T"+committingTransaction);
 		//Get the version with the latest timestamp of @committingTransaction from the list of versions
 		int maxTimestamp = -1;
 		int newCurrVersionIndex = -1; 
+		int fromTransactionNumber = -1;
+		boolean isValuesCommittedAfterLoad = false;
 		for(int i=0; i<this.allVersions.size(); i++){
 			Version version = this.allVersions.get(i);
-
-			//A version with the transaction number of -1 means that it was loaded by the database
-			if((version.getFromTransactionNumber()==committingTransaction || version.getFromTransactionNumber()==-1)
-					&& version.getTimestamp()>maxTimestamp
+			if(debug) System.out.println("Variable: "+version.toString());
+			//Set the boolean value as appropriate
+			if(version.getTimestamp()>maxTimestamp){
+				isValuesCommittedAfterLoad = true;
+			}
+			//A version with the transaction number of 0 means that it was loaded by the database
+			if((version.getFromTransactionNumber()==committingTransaction && version.getTimestamp()>maxTimestamp)
 					){
+				fromTransactionNumber = version.getFromTransactionNumber();
 				newCurrVersionIndex = i;
 				maxTimestamp = version.getTimestamp();
+				if(debug) System.out.println("Variable: New max timestamp = "+maxTimestamp);
+			}else if(version.getFromTransactionNumber()==0){
+				fromTransactionNumber = version.getFromTransactionNumber();
+				newCurrVersionIndex = i;
+				maxTimestamp = version.getTimestamp();
+				if(debug) System.out.println("Variable: New max timestamp from initial= "+maxTimestamp);
 			}
 		}
-		if(debug) System.out.println("Variable: Last committed version located at "+lastCommittedVersion+" All versions="+toStringAllVersions());
-		
-		this.lastCommittedVersion = newCurrVersionIndex;
-		
-		if(debug) System.out.println("Variable: T"+committingTransaction+" is committing "+this.allVersions.get(lastCommittedVersion).toString());
+		//If fromTransactionNumber is 0 i.e. loaded from database while there are greater commits than that, then do not commit anything, since
+		//we do not want to commit an initial value while other transactions have written to it
+		if(fromTransactionNumber==0 && isValuesCommittedAfterLoad){
+			if(debug) System.out.println("Variable: Dont commit anything by T"+committingTransaction+" since previous transactions have latest values.");
+			
+		}else{
+			this.lastCommittedVersion = newCurrVersionIndex;
+			
+			if(debug) System.out.println("Variable: Last committed version located at "+lastCommittedVersion+" All versions="+toStringAllVersions());
+	
+			if(debug) System.out.println("Variable: T"+committingTransaction+" is committing "+this.allVersions.get(lastCommittedVersion).toString());
+	
+			this.allVersions.get(lastCommittedVersion).setCommitted();
+			if(debug) System.out.println("Variable: T"+committingTransaction+" is done committing "+this.allVersions.get(lastCommittedVersion).toString());
+			return this.allVersions.get(lastCommittedVersion).getValue();
 
-		this.allVersions.get(lastCommittedVersion).setCommitted();
-		return this.allVersions.get(lastCommittedVersion).getValue();
+		}
+		return -1;
 	}
 	/*
 	 * Update current version to value
@@ -146,7 +168,7 @@ public class Variable {
 	}
 	public String toStringLatestCommitted(){
 		if(this.lastCommittedVersion!=-1)
-			return ""+allVersions.get(this.lastCommittedVersion).getValue();
+			return ""+allVersions.get(this.lastCommittedVersion).getValue();// + " timestamp="+allVersions.get(this.lastCommittedVersion).getTimestamp();
 		return "NA";
 	}
 	/*
