@@ -2,12 +2,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Variable {
+	private boolean debug = false;
+	
 	//An index, a value from 1 to 20, referring to one of the 20 distinct variables
 	private int indexVariable = -1;
 	
 	//current version is the latest version, but the last committed version the latest committed version
-	private Version latestVersion = null;
-	private Version lastCommittedVersion = null;
+	private int latestVersion = -1;
+	private int lastCommittedVersion = -1;
 	
 	// isAllowRead true, by default, until fail()
 	private boolean isAllowRead = true;
@@ -21,7 +23,8 @@ public class Variable {
 	
 	public Variable(int indexVariable, int value, int timestamp, boolean isCommitted){
 		this.setIndexVariable(indexVariable);
-		this.latestVersion = new Version(value, timestamp, -1, isCommitted);
+		this.allVersions.add(new Version(value, timestamp, -1, isCommitted));
+		this.latestVersion = this.allVersions.size()-1;
 
 		if(isCommitted){
 			lastCommittedVersion = this.latestVersion;
@@ -40,8 +43,9 @@ public class Variable {
 	public int readCommitted(int timestampBefore){
 		//Search the versions backwards
 		for(int i=this.allVersions.size()-1; i>=0; i--){
-			if(allVersions.get(i).isCommitted() 
-					&& allVersions.get(i).getTimestamp()<timestampBefore){
+			if(debug) System.out.println("Variable: Read is trying to find last committed version "+allVersions.get(i).toString());
+			
+			if(allVersions.get(i).isCommitted() && allVersions.get(i).getTimestamp()<timestampBefore){
 				return this.allVersions.get(i).getValue();
 			}
 		}
@@ -51,7 +55,7 @@ public class Variable {
 	 * @return the latest version, which may not necessarily be committed
 	 */
 	public int readLatest(){
-		return this.lastCommittedVersion.getValue();
+		return this.allVersions.get(this.lastCommittedVersion).getValue();
 	}
 	/*
 	 * When a currently active transaction writes to a variable, it create a new version
@@ -61,8 +65,9 @@ public class Variable {
 	 */
 	public void write(int value, int timestamp, int transactionNumber){
 		boolean isCommitted = false;
-		this.latestVersion = new Version(value, timestamp, transactionNumber, isCommitted);
-		this.allVersions.add(this.latestVersion);
+		this.allVersions.add(new Version(value, timestamp, transactionNumber, isCommitted));
+		this.latestVersion = this.allVersions.size()-1;
+
 	}
 	/*
 	 * For recovery purposes, if Variable.isAllowRead = false, then set it to true, 
@@ -77,17 +82,18 @@ public class Variable {
 		
 		//Get the latest timestamp by @committingTransaction
 		int maxTimestamp = -1;
-		Version newCurrVersion = lastCommittedVersion; 
-		for(Version version: this.allVersions){
+		int newCurrVersionIndex = -1; 
+		for(int i=0; i<this.allVersions.size(); i++){
+			Version version = this.allVersions.get(i);
 			if(version.getFromTransactionNumber()==committingTransaction 
 					&& version.getTimestamp()>maxTimestamp){
-				newCurrVersion = version;
+				newCurrVersionIndex = i;
 			}
 		}
-		newCurrVersion.setCommitted();
-		this.lastCommittedVersion = newCurrVersion;
+		this.allVersions.get(newCurrVersionIndex).setCommitted();
+		this.lastCommittedVersion = newCurrVersionIndex;
 		
-		return this.lastCommittedVersion.getValue();
+		return this.allVersions.get(lastCommittedVersion).getValue();
 	}
 	/*
 	 * Update current version to value
@@ -111,11 +117,11 @@ public class Variable {
 	 * toString function for Variable
 	 */
 	public String toString(){ 
-		return "Latest version:"+this.latestVersion.getTimestamp()+" " +this.latestVersion.getValue() + "\n"+
-				"Latest committed version:"+this.lastCommittedVersion.getTimestamp()+" "+this.lastCommittedVersion.getValue()+"\n";
+		return "Latest version:"+allVersions.get(this.latestVersion).getTimestamp()+" " +allVersions.get(this.latestVersion).getValue() + "\n"+
+				"Latest committed version:"+allVersions.get(this.lastCommittedVersion).getTimestamp()+" "+allVersions.get(this.lastCommittedVersion).getValue()+"\n";
 	}
 	public String toStringLatestCommitted(){
-		return ""+this.lastCommittedVersion.getValue();
+		return ""+allVersions.get(this.lastCommittedVersion).getValue();
 	}
 	/*
 	 * Setter and getters for @isAllowRead

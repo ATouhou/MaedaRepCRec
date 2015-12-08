@@ -38,4 +38,8 @@ public class Version {
 	public void setCommitted(){
 		this.isCommitted = true;
 	}
+	
+	public String toString(){
+		return "Version(value="+value+", timestamp="+timestamp+",isCommitted="+isCommitted+")";
+	}
 }
