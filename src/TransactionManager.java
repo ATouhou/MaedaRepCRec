@@ -130,6 +130,10 @@ public class TransactionManager {
 			//Gives the committed values of all copies of variable xj at all sites
 			this.dataManager.dumpVariable(variableIndex);
 
+		}else if(command[0].equals("fail")){
+			//command = ["fail", siteIndex]
+			int siteIndexToFail = Integer.parseInt(command[1]);
+			this.dataManager.getSite(siteIndexToFail).fail();
 		}
 		return true;
 		/*
