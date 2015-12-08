@@ -3,7 +3,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+/*
+ * Maeda Hanafi
+ * December 2015
+ */
 public class TransactionManager {
 	
 	//Data Manager manages all the sites and knows where all the variables are

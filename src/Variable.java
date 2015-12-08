@@ -14,10 +14,6 @@ public class Variable {
 	// isAllowRead true, by default, until fail()
 	private boolean isAllowRead = true;
 	
-	//	isLock has access control by a semaphore i.e. synchronized, ensuring that only one write thread has access
-	// TODO: locks must be kept seperate from variable because there can be upgrades from read to write
-	//private boolean isLock = false;
-	
 	//List of all version of this variable
 	private List<Version> allVersions = new ArrayList<Version>();
 	
@@ -130,21 +126,7 @@ public class Variable {
 		}
 		return -1;
 	}
-	/*
-	 * Update current version to value
-	 * TODO: What is the timestamp of the final written value? The current
-	 * TODO: timestamp when it was written or the transaction's timestamp?
-	 */
-	/*private void writeToCurrentVersion(int value, int timestamp){
-		this.currentVersion = new Version(value, timestamp, -1);
-	}
-	/*
-	 * Set the currentVersion to the before image of t
-	 */
-	public void restoreBeforeImage(Transaction t){
-		//Set the currentVersion to the before image of t
-		//TODO: IOW, set currentVersion to the last committed value that happenned before t started
-	}
+	
 	/******************************************************************************************************
 	 * Recovery methods
 	 ******************************************************************************************************/

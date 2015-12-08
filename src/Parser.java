@@ -4,7 +4,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+/*
+ * Maeda Hanafi
+ * Dec 2015
 
+ */
 public class Parser {
 	private String instructionfile = "";
 	private int currentTimestamp = 0; 

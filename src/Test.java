@@ -1,6 +1,10 @@
-
+/*
+ * Maeda Hanafi
+ * December 2015
+ * This is the main class, which invokes the parser and invokes the data loader from Transaction Manager.
+ */
 public class Test {
-	//TODO:General description (see syllabus)
+	//TODO: test commandline
 	//TODO:Each function, input, output, side affects
 	//TODO: reprozip
 	//The submitted code similarly should include as a header: the author (if you are working in a team of two), the date, 

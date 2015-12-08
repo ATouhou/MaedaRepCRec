@@ -4,7 +4,6 @@ import java.util.List;
 /*
  * The log keeps track of all actions on a site:
  * - commit. details = ["commit", transactionNumber, variableIndex, valueCommitted]
- * - abort
  * - locks given. details = ["give lock",transactionNumber, variableIndex, isLockRequestReadOnly]
  * - lock release. details = ["release lock",transactionNumber, variableIndex, isLockRequestReadOnly]
  * - recover. details = ["recover"]
