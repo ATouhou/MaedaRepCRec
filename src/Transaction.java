@@ -35,6 +35,7 @@ public interface Transaction {
 	List<String[]> getQueuedOperations();
 	void addQueuedOperation(String[] queuedOperations);
 	void removeQueuedOperation(String[] queuedOperations);
+	String getQueuedOperationsToString();
 	
 	//Information on whether this transaction is waiting
 	boolean isWaiting();

@@ -145,6 +145,8 @@ public class RWTransaction implements Transaction{
 			
 			this.dm.commit(siteIndex, variableIndex, transactionNumber, currentTimestamp, transactionNumber);
 		}
+		releaseLocks( currentTimestamp);
+
 	}
 	
 	/*
@@ -199,6 +201,13 @@ public class RWTransaction implements Transaction{
 	 ******************************************************************************************************/
 	public List<String[]> getQueuedOperations() {
 		return queuedOperations;
+	}
+	public String getQueuedOperationsToString() {
+		String str = "";
+		for(String[] op: this.queuedOperations){
+			str = str +" "+Arrays.toString(op);
+		}
+		return str;
 	}
 	@Override
 	public void addQueuedOperation(String[] queuedOperations) {

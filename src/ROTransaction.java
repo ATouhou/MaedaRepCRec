@@ -128,6 +128,11 @@ public class ROTransaction implements Transaction{
 	public void setTransactionToActive() {
 		
 	}
+	@Override
+	public String getQueuedOperationsToString() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 	
 	 

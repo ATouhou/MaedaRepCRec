@@ -80,15 +80,12 @@ public class TransactionManager {
 					RWTransaction rwTransaction = (RWTransaction) this.activeTransactions.get(transactionNumber);
 					
 					if(validate(transactionNumber)){
+						System.out.println("TM: T"+transactionNumber+" is valid. Commit.");
 						rwTransaction.commit(currentTimestamp);
 					}else{
 						//If it is not valid, abort it
 						abort(transactionNumber, currentTimestamp);
 					}
-					
-					//Once the transaction commits/aborts, it can release the locks
-					rwTransaction.releaseLocks(currentTimestamp);
-					
 					
 				}else{
 					//Otherwise, if the transaction was read only, then say yes
@@ -99,9 +96,11 @@ public class TransactionManager {
 				
 				//Executing the transactions that were waiting for this transaction
 				int transactionNumberWait = getTransactionWaitingFor(transactionNumber);
-				runQueuedTransaction(transactionNumberWait, currentTimestamp);
-				
-				//At end, remove this transaction from active transaction
+				if(transactionNumberWait!=-1){
+					System.out.println("TM: Locks are released, run T"+transactionNumberWait+" who waited on T"+transactionNumber);
+					runQueuedTransaction(transactionNumberWait, currentTimestamp);
+				}
+				//At end, remove this transaction from the lists transaction
 				this.activeTransactions.remove(transactionNumber);
 				
 			}else{
@@ -356,10 +355,13 @@ public class TransactionManager {
 	private boolean runQueuedTransaction(int transactionNumber, int currentTimestamp){
 		//The transaction number that is causing @transactionNumber to wait in the first place
 		//int transactionNumberWait = this.queuedTransactions.get(transactionNumber).getTransactionWaitFor();
-		System.out.println("TM: Running queued commands of T"+transactionNumber);
 		
 		//Set the queued transaction to active
 		activateTransaction(transactionNumber);
+
+		System.out.println("TM: Running queued commands of T"+transactionNumber+" "+ this.activeTransactions.get(transactionNumber).getQueuedOperationsToString());
+
+		List<String[]> executed = new ArrayList<String[]>();
 		
 		for(String[] command: this.activeTransactions.get(transactionNumber).getQueuedOperations()){
 			System.out.println("TM: Executing "+Arrays.toString(command));
@@ -374,10 +376,17 @@ public class TransactionManager {
 				Transaction transactionWait = this.getConflictingTransaction(transactionNumber, siteIndexToAccess, variableIndexToAccess);
 				
 				queueTransaction(transactionNumber, transactionWait.getTransactionNumber());
+				System.out.println("TM: T"+transactionNumber+" back to queue and wait for T"+transactionWait.getTransactionNumber());
+
+				//Remove the already executed commands from queue
+				for(String[] execs: executed){
+					this.activeTransactions.get(transactionNumber).removeQueuedOperation(execs);
+				}
 				return false;
 			}else{
+				System.out.println("TM: T"+transactionNumber+" successfully executed queued "+Arrays.toString(command));
 				//Otherwise, remove that command from the queue
-				this.activeTransactions.get(transactionNumber).removeQueuedOperation(command);
+				executed.add(command);
 			}
 		}
 		return true;
