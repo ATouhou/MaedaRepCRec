@@ -20,7 +20,7 @@ public class RWTransaction implements Transaction{
 	private List<Integer> sitesIndexesAccessed = new ArrayList<Integer>();
 	
 	//Pairs of site indexes and variable indexes that the transaction has accessed
-	//i.e. [ {site index 1, variable index 3}, {...}, ... ]
+	//i.e. [ {site index 1, variable index 3, timestamp of access}, {...}, ... ]
 	private List<Integer[]> sitesIndexesVariableIndexesAccessed = new ArrayList<Integer[]>();
 		
 	//A list of commands, where command has the same format as the output of Parser.parseNextInstruction()
@@ -67,8 +67,8 @@ public class RWTransaction implements Transaction{
 					this.sitesIndexesAccessed.add(siteIndex);
 				}
 				
-				if(!this.sitesIndexesVariableIndexesAccessed.contains(new Integer[]{siteIndex, variableIndex})){
-					sitesIndexesVariableIndexesAccessed.add(new Integer[]{siteIndex, variableIndex});
+				if(!this.sitesIndexesVariableIndexesAccessed.contains(new Integer[]{siteIndex, variableIndex, currentTimestamp})){
+					sitesIndexesVariableIndexesAccessed.add(new Integer[]{siteIndex, variableIndex, currentTimestamp});
 				}
 			}
 			
@@ -89,8 +89,8 @@ public class RWTransaction implements Transaction{
 				this.sitesIndexesAccessed.add(siteIndexToReadFrom);
 			}
 			
-			if(!this.sitesIndexesVariableIndexesAccessed.contains(new Integer[]{siteIndexToReadFrom, variableIndex})){
-				sitesIndexesVariableIndexesAccessed.add(new Integer[]{siteIndexToReadFrom, variableIndex});
+			if(!this.sitesIndexesVariableIndexesAccessed.contains(new Integer[]{siteIndexToReadFrom, variableIndex, currentTimestamp})){
+				sitesIndexesVariableIndexesAccessed.add(new Integer[]{siteIndexToReadFrom, variableIndex, currentTimestamp});
 			}
 		}
 		
@@ -234,13 +234,34 @@ public class RWTransaction implements Transaction{
 	public List<Integer> getSiteIndexesAccessed() {
 		return this.sitesIndexesAccessed;
 	}
+	/*
+	 * @return is the list of [siteIndex accessed, variableIndex accessed]
+	 */
+	 
+	public List<Integer[]> getSiteVariablesAccessed() {
+		return this.sitesIndexesVariableIndexesAccessed;
+	}
 	 
 
 	@Override
 	public int getBeginningTimestamp() {
 		return this.beginningTimestamp;
 	}
-
+	@Override
+	public int getBeginningTimestampAccessVariable(int siteIndex, int variableIndex) {
+		//Get the timestamp when this transaction first accessed it
+		int earliestTimestamp = 10000;
+		for(Integer[] sitevarPair: this.sitesIndexesVariableIndexesAccessed){
+			//sitevarPair = [siteIndex, variableIndex, current timestamp]
+			//If the timestamp is smaller than earliestTimestamp, then set that as the earliestTimestamp
+			if(earliestTimestamp>sitevarPair[2]
+					&& siteIndex == sitevarPair[0]
+					&& variableIndex == sitevarPair[1]){
+				earliestTimestamp = sitevarPair[2];
+			}
+		}
+		return earliestTimestamp;
+	}
 	@Override
 	public void setReadOnly(boolean input) {
 		this.isReadOnly = input;
@@ -293,7 +314,4 @@ public class RWTransaction implements Transaction{
 		this.waitForTransaction = -1;
 	}
 	
-	
-	
-
 }

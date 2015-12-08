@@ -52,11 +52,13 @@ public class TransactionManager {
 
 			return true;
 		}else if(command[0].equals("W")){
+
 			//First check if the transaction is even created. If it was aborted before, we may still receive instructions
 			if(isTransactionExist(Integer.parseInt(command[1]))){
 				return processWrite( command, currentTimestamp);
 			}
 			return true;
+			
 		}else if(command[0].equals("R")){
 			if(isTransactionExist(Integer.parseInt(command[1]))){
 				return processRead( command, currentTimestamp);
@@ -80,7 +82,6 @@ public class TransactionManager {
 					RWTransaction rwTransaction = (RWTransaction) this.activeTransactions.get(transactionNumber);
 					
 					if(validate(transactionNumber)){
-						System.out.println("TM: T"+transactionNumber+" is valid. Commit.");
 						rwTransaction.commit(currentTimestamp);
 					}else{
 						//If it is not valid, abort it
@@ -131,13 +132,17 @@ public class TransactionManager {
 			this.dataManager.dumpVariable(variableIndex);
 
 		}else if(command[0].equals("fail")){
+			
 			//command = ["fail", siteIndex]
 			int siteIndexToFail = Integer.parseInt(command[1]);
 			this.dataManager.getSite(siteIndexToFail).fail(currentTimestamp);
+			
 		}else if(command[0].equals("recover")){
+			
 			//command = ["recover", siteIndex]
 			int siteIndexToRecover = Integer.parseInt(command[1]);
 			this.dataManager.getSite(siteIndexToRecover).recover(currentTimestamp);
+			
 		}
 		return true;
 		
@@ -176,16 +181,20 @@ public class TransactionManager {
 			
 			for(Integer siteIndex: siteIndexesToWrite){
 				if(!currentTransaction.isHasWriteLock(siteIndex, variableIndex)){
-					
+
 					Lock lock = null;
 					
 					//If the transaction does have a read lock on the data, then upgrade from read to write lock
 					if(currentTransaction.isHasReadOnlyLock(siteIndex, variableIndex)){
+
 						//Request an upgrade from the site's lock manager
 						//Upgrade the lock in the transaction
 						lock = this.dataManager.getSite(siteIndex).upgradeRequest(currentTimestamp, transactionNumber, variableIndex);
+
 						currentTransaction.upgradeLock(transactionNumber, siteIndex, variableIndex);
+
 					}else{
+
 						//Acquire a write lock from the site's lock manager
 						lock = this.dataManager.getSite(siteIndex).requestLock(currentTimestamp, transactionNumber, variableIndex, false);
 					}
@@ -346,22 +355,28 @@ public class TransactionManager {
 		
 	}
 	/*
-	 * If one of the sites accessed has failed after the transaction began, return false
+	 * If one of the sites accessed has failed after the transaction accessed it, return false
 	 * @return boolean
 	 */
 	private boolean validate(int transactionNumber){ 
 		//If one of the sites accessed has failed after the transaction ran, return false
+		//TODO: ?However, it is ok to access sites on which the variable was not replicated anywhere else
 		Transaction transaction = this.activeTransactions.get(transactionNumber);
 		
+		
 		//Loop through all the sites the transaction has accessed
-		List<Integer> sitesAccessed = transaction.getSiteIndexesAccessed();
-		for(int key: sitesAccessed){
-			//If one of the sites has failed, then return false
-			if(this.dataManager.getSite(key).isSiteDownAfter(transaction.getBeginningTimestamp())){
+		List<Integer[]> sitesAccessed = transaction.getSiteVariablesAccessed();
+		for(Integer[] siteVariablePair: sitesAccessed){
+			//If one of the sites has failed AND the variable it accessed is replicated, then return false
+			int beginningTimestamp = transaction.getBeginningTimestampAccessVariable(siteVariablePair[0], siteVariablePair[1]);
+			if(this.dataManager.getSite(siteVariablePair[0]).isSiteDownAfter(beginningTimestamp)
+					){//&& this.dataManager.getSite(siteVariablePair[0]).isVariableReplicated(siteVariablePair[1])){
+				System.out.println("TM: T"+transactionNumber+" is invalid since site "+siteVariablePair[0]+" was down after it was accessed by the transaction");// and variable "+siteVariablePair[1]+" is replicated as other sites.");
 				return false;
 			}
 			
 		}
+		System.out.println("TM: T"+transactionNumber+" is valid. Commit.");
 		return true;
 	}
 	/******************************************************************************************************

@@ -335,9 +335,13 @@ public class Site {
 			//If a different transaction has a read lock and the requesting lock is a write lock, do not give the lock i.e. return null
 			if((lock.getTransactionNumber()!=transactionNumber
 					&& lock.getLockedVariableIndex()==variableIndex
-					&& !lock.isReadOnly())){
+					&& !lock.isReadOnly())
+				|| 
+				(lock.getTransactionNumber()!=transactionNumber
+					&& lock.getLockedVariableIndex() == variableIndex
+					&& lock.isReadOnly())){
 				System.out.println("Site: T"+transactionNumber+" found conflicting lock held by T"+lock.getTransactionNumber());
-				System.out.println("Site: Exclusive Lock denied for T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
+				System.out.println("Site: Upgrade to exclusive lock denied for T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
 				return null;
 				
 			}
@@ -351,10 +355,11 @@ public class Site {
 				this.activeLocks.remove(index);
 				break;
 			}
+			index++;
 		}
 		this.activeLocks.add(candidateLock);
 		
-		System.out.println("Site: Exclusive Lock give to T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
+		System.out.println("Site: Upgrade to exclusive lock give to T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
 
 		//Give lock and record in the site
 		String[] details = new String[]{"give lock",""+transactionNumber, ""+variableIndex, ""+false};

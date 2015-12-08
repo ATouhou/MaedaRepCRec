@@ -14,7 +14,9 @@ public class ROTransaction implements Transaction{
 	
 	//A list of all the sites accessed
 	private List<Integer> sitesIndexesAccessed = new ArrayList<Integer>();
-		
+	//A list of site index and variable index pairs that was accessed
+	private List<Integer[]> sitesIndexesVariableIndexesAccessed = new ArrayList<Integer[]>();
+	
 	//A list of commands, where command has the same format as the output of Parser.parseNextInstruction()
 	private List<String[]> queuedOperations = new ArrayList<String[]>();
 
@@ -38,12 +40,11 @@ public class ROTransaction implements Transaction{
 
 		//Read from any one site
 		int readValue = this.dm.readCommitted(siteIndexesToReadFrom.get(0), variableIndex, this.beginningTimestamp);
-		//Site siteToRead = this.dm.getSite(siteIndexesToReadFrom.get(0));
-		//int readValue =siteToRead.getVariable(variableIndex).readCommitted(this.beginningTimestamp);
 		System.out.println("ROTran: "+readValue);
 
 		//Add the site to list of accessed sites
 		sitesIndexesAccessed.add(siteIndexesToReadFrom.get(0));
+		sitesIndexesVariableIndexesAccessed.add(new Integer[]{siteIndexesToReadFrom.get(0), variableIndex, currentTimestamp});
 	}
 
 	/*
@@ -78,13 +79,22 @@ public class ROTransaction implements Transaction{
 	public List<Integer> getSiteIndexesAccessed() {
 		return this.sitesIndexesAccessed;
 	}
-	 
+	@Override
+	public List<Integer[]> getSiteVariablesAccessed() {
+		return this.sitesIndexesVariableIndexesAccessed;
+	}
 
 	@Override
 	public int getBeginningTimestamp() {
 		return this.beginningTimestamp;
 	}
 
+	@Override
+	public int getBeginningTimestampAccessVariable(int siteIndex, int variableIndex) {
+		//This method is never used in ro transactions. This method is used for validation and ro's don't need validate
+		return 0;
+	}
+	
 	@Override
 	public void setReadOnly(boolean input) {
 		this.isReadOnly = input;
@@ -134,6 +144,8 @@ public class ROTransaction implements Transaction{
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	
 	
 	
 	 

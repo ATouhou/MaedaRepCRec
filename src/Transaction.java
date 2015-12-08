@@ -26,8 +26,13 @@ public interface Transaction {
 	
 	void abort(int currentTimestamp);
 	
+	//This returns a list of site indexes accessed or pairs of site indexes and variable indexes accessed, where Integer[] = [site index, variable index]
 	List<Integer> getSiteIndexesAccessed();
+	List<Integer[]> getSiteVariablesAccessed();
 	
+	//Returns the timestamp are which the first time accessing @variableIndex at @siteIndex
+	int getBeginningTimestampAccessVariable(int siteIndex, int variableIndex);
+
 	//This returns the timstamp at which the transaction began
 	int getBeginningTimestamp();
 	
