@@ -89,7 +89,7 @@ public class TransactionManager {
 					
 				}else{
 					//Otherwise, if the transaction was read only, then say yes
-					System.out.println("TM: T"+transactionNumber+" can commit");
+					System.out.println("TM: T"+transactionNumber+" is valid. Commit.");
 					ROTransaction roTransaction = (ROTransaction) this.activeTransactions.get(transactionNumber);
 					roTransaction.commit(currentTimestamp);
 				}

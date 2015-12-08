@@ -145,7 +145,9 @@ public class Variable {
 				"Latest committed version:"+allVersions.get(this.lastCommittedVersion).getTimestamp()+" "+allVersions.get(this.lastCommittedVersion).getValue()+"\n";
 	}
 	public String toStringLatestCommitted(){
-		return ""+allVersions.get(this.lastCommittedVersion).getValue();
+		if(this.lastCommittedVersion!=-1)
+			return ""+allVersions.get(this.lastCommittedVersion).getValue();
+		return "NA";
 	}
 	/*
 	 * Setter and getters for @isAllowRead

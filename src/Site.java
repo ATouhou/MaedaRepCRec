@@ -6,6 +6,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class Site {
+	boolean debug = false;
+	
 	//Integer refers to the variable index
 	private Map<Integer, Variable> siteVariables = new HashMap<Integer, Variable>();
 	
@@ -113,9 +115,9 @@ public class Site {
 			variable.setAllowRead(false);
 		}
 		
-		//lockmanager.releaseSiteLock();
 		this.activeLocks = new ArrayList<Lock>();
-				
+		System.out.println("Site: Site "+this.siteIndex+" erased locks.");
+		
 		String[] details = new String[]{"fail"};
 		siteLog.addEvent(currentTimestamp, details);
 		
@@ -379,7 +381,7 @@ public class Site {
 				
 				this.activeLocks.remove(lock);
 			}else{
-				System.out.println("Site: Lock not released on x"+lock.getLockedVariableIndex()+"."+siteIndex+" held by T"+lock.getTransactionNumber());
+				if(debug) System.out.println("Site: Lock not released on x"+lock.getLockedVariableIndex()+"."+siteIndex+" held by T"+lock.getTransactionNumber());
 
 				i++;
 				

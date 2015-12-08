@@ -4,7 +4,9 @@
 
 begin(T1)
 beginRO(T2)
+//T2 reads 20
 W(T1,x1,101); R(T2,x2)
+//T2 reads 10 not 101
 W(T1,x2,102); R(T2,x1)
 end(T1) 
 end(T2)
