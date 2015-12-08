@@ -77,10 +77,11 @@ public class DataManager {
 	/*
 	 * @siteIndex is the site index to read from, which is decided from Transaction.
 	 * @variableIndex is the variable index to read, also given from Transaction.
+ 	 * @requiredLock is the lock that gives access to the variable. 
 	 * @return the latest version, which may not necessarily be committed.
 	 */
-	public int readLatest(int siteIndex, int variableIndex){
-		return this.allSites.get(siteIndex).readLatest(variableIndex);
+	public int readLatest(int siteIndex, int variableIndex, Lock requiredLock){
+		return this.allSites.get(siteIndex).readLatest(variableIndex, requiredLock);
 	}
 	/*
 	 * When a currently active transaction writes to a variable, it create a new version.
@@ -89,9 +90,10 @@ public class DataManager {
 	 * @value is the new value
 	 * @currentTimestamp is the current timestamp
 	 * @transactionNumber is the current transaction doing this operation
-	 */
-	public void write(int siteIndex, int variableIndex, int value, int currentTimestamp, int transactionNumber){
-		this.allSites.get(siteIndex).write(variableIndex, value, currentTimestamp, transactionNumber);
+  	 * @requiredLock is the lock that gives access to the variable. 
+  	 */
+	public void write(int siteIndex, int variableIndex, int value, int currentTimestamp, int transactionNumber, Lock requiredLock){
+		this.allSites.get(siteIndex).write(variableIndex, value, currentTimestamp, transactionNumber, requiredLock);
 	}
 	/*
 	 * For recovery purposes, if Variable.isAllowRead = false, then set it to true, 

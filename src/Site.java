@@ -19,7 +19,7 @@ public class Site {
 	private int siteIndex = -1;
 	
 	//Each site has lockmanager
-	private LockManager lockmanager = new LockManager();
+	//private LockManager lockmanager = new LockManager();
 	
 	private List<Lock> activeLocks = new ArrayList<Lock>();
 	
@@ -49,12 +49,19 @@ public class Site {
 		return this.getVariable(variableIndex).readCommitted(timestampBefore);
 	}
 	/*
+	 * Reading the latest requires a shared lock/write lock.
 	 * @variableIndex is the variable index to read, also given from DataManager.
-	 * TODO: @lock is the lock that gives access to the variable
+	 * @requiredLock is the lock that gives access to the variable. 
+	 *  	It must exist in the lock manager, otherwise the operation returns -1, meaning that the read couldn't be done.
 	 * @return the latest version, which may not necessarily be committed.
 	 */
-	public int readLatest(int variableIndex){
-		return this.getVariable(variableIndex).readLatest();
+	public int readLatest(int variableIndex, Lock requiredLock){
+		if(this.isActiveLockExist(requiredLock)){
+			return this.getVariable(variableIndex).readLatest();
+		}
+		
+		System.out.println("Site: Required lock not valid for operation on x"+variableIndex+"."+this.siteIndex);
+		return -1;
 	}
 	/*
 	 * When a currently active transaction writes to a variable, it create a new version.
@@ -62,9 +69,14 @@ public class Site {
 	 * @value is the new value
 	 * @currentTimestamp is the current timestamp
 	 * @transactionNumber is the current transaction doing this operation
-	 */
-	public void write(int variableIndex, int value, int currentTimestamp, int transactionNumber){
-		this.getVariable(variableIndex).write(value, currentTimestamp, transactionNumber);
+ 	 * @requiredLock is the lock that gives access to the variable. 
+ 	 */
+	public void write(int variableIndex, int value, int currentTimestamp, int transactionNumber, Lock requiredLock){
+		if(this.isActiveLockExist(requiredLock)){
+			this.getVariable(variableIndex).write(value, currentTimestamp, transactionNumber);
+		}else{
+			System.out.println("Site: Required lock not valid for operation from T"+transactionNumber+"on x"+variableIndex+"."+this.siteIndex);
+		}
 	}
 	/*
 	 * For recovery purposes, if Variable.isAllowRead = false, then set it to true, 
@@ -100,8 +112,10 @@ public class Site {
 			Variable variable = siteVariables.get(key);
 			variable.setAllowRead(false);
 		}
-		lockmanager.releaseSiteLock();
 		
+		//lockmanager.releaseSiteLock();
+		this.activeLocks = new ArrayList<Lock>();
+				
 		String[] details = new String[]{"fail"};
 		siteLog.addEvent(currentTimestamp, details);
 		
@@ -399,6 +413,18 @@ public class Site {
 			}
 		}
 		return null;
+	}
+	
+	/*
+	 * @return true if this site has given such a lock, @testLock 
+	 */
+	public boolean isActiveLockExist(Lock testLock){
+		for(Lock lock:this.activeLocks){
+			if(lock.isEqual(testLock)){
+				return true;
+			}
+		}
+		return false;
 	}
 	
 }

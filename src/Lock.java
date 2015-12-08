@@ -22,7 +22,18 @@ public class Lock{
 		this.siteIndex = siteIndex;
 		this.isReadOnly = isReadOnly;
 	}
-
+	/*
+	 * Tests if a given lock is the exact same lock as this, which is useful for authenticating an operation requiring a lock
+	 */
+	public boolean isEqual(Lock testLock){
+		if(testLock.isReadOnly() == isReadOnly
+				&& testLock.getTransactionNumber() == this.transactionNumber
+				&& testLock.getLockedVariableIndex() == this.getLockedVariableIndex()
+				&& testLock.getSiteIndex() == this.siteIndex){
+			return true;
+		}
+		return false;
+	}
 	/*
 	 * Getter functions for the Lock's members
 	 */
@@ -45,5 +56,6 @@ public class Lock{
 	public void setIsReadOnly(boolean newSetting){
 		this.isReadOnly = newSetting;
 	}
+	
 	
 }

@@ -3,12 +3,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public class RWTransaction implements Transaction{
+	private boolean debug = false;
+	
 	private boolean isReadOnly = false;
 	private DataManager dm = null; 
 	
-	//TODO:get rid of locks in the transaction otherwise add them here and not only in the Sites when they area cquired
 	//List of locks the transaction owns; this list reflects the lock tables on the sites
-	List<Lock> locks = new ArrayList<Lock>();
+	private List<Lock> locks = new ArrayList<Lock>();
 	
 	private int transactionNumber = -1;
 	
@@ -56,8 +57,8 @@ public class RWTransaction implements Transaction{
 			List<Integer> siteIndexesToWrite  = this.dm.getAvailableSitesVariablesWhere(variableIndex);
 			
 			for(Integer siteIndex: siteIndexesToWrite){
-				//dm.getSite(siteIndex).getVariable(variableIndex).write(valueToWrite, currentTimestamp, transactionNumber);
-				dm.write(siteIndex, variableIndex, valueToWrite, currentTimestamp, transactionNumber);
+				Lock  requiredLock = getActiveLock( siteIndex,  variableIndex, false);
+				dm.write(siteIndex, variableIndex, valueToWrite, currentTimestamp, transactionNumber, requiredLock);
 				
 				System.out.println("RWTran: T"+this.transactionNumber+" write "+valueToWrite+" to x"+variableIndex+"."+siteIndex);
 
@@ -77,10 +78,10 @@ public class RWTransaction implements Transaction{
 			//command = [ "R", transaction number, index variable, site index to read from]
 			int siteIndexToReadFrom = Integer.parseInt(command[3]);
 			int variableIndex = Integer.parseInt(command[2]);
+			Lock  requiredLock = getActiveLock( siteIndexToReadFrom,  variableIndex, true);
 			
 			//Read the latest version, which may not necessarily be committed
-			//dm.getSite(siteIndexToReadFrom).getVariable(variableIndex).readLatest();
-			int readValue = this.dm.readLatest(siteIndexToReadFrom,variableIndex );
+			int readValue = this.dm.readLatest(siteIndexToReadFrom,variableIndex, requiredLock );
 			System.out.println("RWTran: T"+this.transactionNumber+" read "+readValue);
 			
 			//Record the accessed sites
@@ -94,7 +95,20 @@ public class RWTransaction implements Transaction{
 		}
 		
 	}
-	
+	/******************************************************************************************************
+	 * Lock related operations
+	 ******************************************************************************************************/
+	/*
+	 * @return the active with the given paramters
+	 */
+	public Lock getActiveLock(int siteIndex, int variableIndex, boolean isReadOnlyLockType){
+		for(Lock lock: this.locks){
+			if(lock.isEqual(new Lock(this.transactionNumber, siteIndex, variableIndex,  isReadOnlyLockType))){
+				return lock;
+			}
+		}
+		return null;
+	}
 	/*
 	 * @return whether this transaction has the write lock on  @variableIndex at @siteIndex
 	 */
@@ -146,7 +160,7 @@ public class RWTransaction implements Transaction{
 		return false;
 	}
 	/*
-	 * Upgrade a read lock to a write lock.
+	 * Upgrade a read lock to a write lock. This assumes that the transaction manager has gained the permission to do so by the site.
 	 * @transactionNumber, @siteIndex, @variableIndex are values of the lock
 	 */
 	public void upgradeLock(int transactionNumber, int siteIndex, int variableIndex){
@@ -164,12 +178,16 @@ public class RWTransaction implements Transaction{
 		}
 	}
 	/*
-	 * @lock is the lock given by the Transaction Manager
+	 * @lock is the lock given by the Transaction Manager. Whenever a lock is acquired, the transaction manager mustnotify the transaction.
 	 */
 	@Override
 	public void addLock(Lock lock) {
 		this.locks.add(lock);
 	}
+	
+	/******************************************************************************************************
+	 * Transaction commit, abort, release locks, called by the Transaction Manager
+	 ******************************************************************************************************/
 	
 	@Override
 	public void commit(int currentTimestamp) {
@@ -201,13 +219,16 @@ public class RWTransaction implements Transaction{
 	public void releaseLocks(int currentTimestamp) {
 		//When releasing the locks, the transaction informs the sites about the releasing the locks
 		//The transaction sets its own set of locks to null
-		System.out.println("RWTran: T"+this.transactionNumber+" accessed "+this.sitesIndexesAccessed);
+		if(debug) System.out.println("RWTran: T"+this.transactionNumber+" accessed "+this.sitesIndexesAccessed);
 		for(Integer siteAccessedIndex: this.sitesIndexesAccessed){
 			this.dm.getSite(siteAccessedIndex).releaseLocks(transactionNumber, currentTimestamp);
 		}
 		
 		this.locks = new ArrayList<Lock>();
 	}
+	/******************************************************************************************************
+	 * Getters and setters
+	 ******************************************************************************************************/
 
 	@Override
 	public List<Integer> getSiteIndexesAccessed() {

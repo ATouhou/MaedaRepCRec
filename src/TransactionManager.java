@@ -178,8 +178,8 @@ public class TransactionManager {
 				if(!currentTransaction.isHasWriteLock(siteIndex, variableIndex)){
 					
 					Lock lock = null;
+					
 					//If the transaction does have a read lock on the data, then upgrade from read to write lock
-					 
 					if(currentTransaction.isHasReadOnlyLock(siteIndex, variableIndex)){
 						//Request an upgrade from the site's lock manager
 						//Upgrade the lock in the transaction
@@ -211,6 +211,9 @@ public class TransactionManager {
 							queueTransaction(transactionNumber, conflictingTransaction.getTransactionNumber());
 							return false;
 						}
+					}else{
+						//If the lock was acquired, make sure that the transaction knows about it
+						currentTransaction.addLock(lock);
 					}
 				}
 			}
@@ -281,6 +284,8 @@ public class TransactionManager {
 					for(Integer siteIndex: siteIndexesToWrite){
 						Lock lock = this.dataManager.getSite(siteIndex).requestLock(currentTimestamp, transactionNumber, variableIndex, true);
 						if(lock!=null){
+							//Tell the transaction that the lock was acquired
+							rwTransaction.addLock(lock);
 							
 							String[] modifyCommand = new String[]{command[0], command[1], command[2], siteIndex+""};
 							rwTransaction.processOperation("R", modifyCommand, currentTimestamp);

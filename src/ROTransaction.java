@@ -25,6 +25,7 @@ public class ROTransaction implements Transaction{
 	}
 	/*
 	 * processOperation() = read(Variable x) - return the version from before this transaction started.
+	 * A read only transaction doesn't need any required locks.
 	 */
 	@Override
 	public void processOperation(String operation, String[] inputs, int currentTimestamp) {
