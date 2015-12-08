@@ -22,6 +22,9 @@ public class Site {
 	private LockManager lockmanager = new LockManager();
 	
 	private List<Lock> activeLocks = new ArrayList<Lock>();
+	
+	//Indexes of variables that aren't replicated, which is important information for recovery purposes
+	private List<Integer> unreplicatedVariables = new ArrayList<Integer>();
 
 	/*
 	 * Instantiates the site
@@ -72,7 +75,9 @@ public class Site {
 	 * @transactionNumber is the current transaction doing this operation
 	 */
 	public void commit(int variableIndex, int committingTransaction, int currentTimestamp, int transactionNumber){
-
+		
+		System.out.println("Site: Committing T"+committingTransaction+" x"+variableIndex+"."+this.siteIndex);
+		
 		int valueCommitted = this.getVariable(variableIndex).commit(committingTransaction);
 			 
 		String[] details = new String[]{"commit",""+transactionNumber, ""+variableIndex, ""+valueCommitted};
@@ -87,7 +92,7 @@ public class Site {
 	 * Set all variable's Site.isAllowRead = false
 	 * All sites must release locks from living transactions that were also live at that site.
 	 */
-	public void fail(){
+	public void fail(int currentTimestamp){
 		setSiteDown(true);
 		//Set all variable's Site.isAllowRead = false
 		for(Integer key: siteVariables.keySet()){
@@ -95,6 +100,42 @@ public class Site {
 			variable.setAllowRead(false);
 		}
 		lockmanager.releaseSiteLock();
+		
+		String[] details = new String[]{"fail"};
+		siteLog.addEvent(currentTimestamp, details);
+		
+	}
+	/*
+	 * Recover this site.
+	 * For all Variables at x, if the variable is not replicated at any other sites, then Variable.isAllowRead = true.
+	 * This allows reads to a variable not replicated anywhere else. 
+	 * If the variable is replicated: 
+	 *  - Variable.lastCommittedVersion = -1, which sets the data to unusable, until a write happens. 
+	 *  - Variable.currentVersion = -1, which sets the data to unusable until a write happens.
+	 *   
+	 *  Site.isSiteDown = false, which allows writes to the site, but not reads to replicated ones.
+	 *  Record the recovery in the site's log.
+	 */
+	public void recover(int currentTimestamp){
+		//For all Variables at x, if the variable is not replicated at any other sites, then Variable.isAllowRead = true.
+		//This allows reads to a variable not replicated anywhere else. 
+		for(Variable variable: this.siteVariables.values()){
+			if(!isVariableReplicated(variable.getIndexVariable())){
+				variable.setAllowRead(true);
+			}else{
+				//Version.lastCommittedVersion = -1, which sets the data to unreadable, until a write happens 
+				//Version.currentVersion = -1, which sets the data to unreadable until a write happens 
+				variable.resetVersionIndexes();
+			}
+		}
+		
+		
+		//Site.isSiteDown = false, which allows writes to the site, but not reads to replicated ones
+		this.isSiteDown = false;
+		
+		String[] details = new String[]{"recover"};
+		siteLog.addEvent(currentTimestamp, details);
+		
 	}
 	/******************************************************************************************************
 	 * Setter, getter, and dump method
@@ -121,9 +162,13 @@ public class Site {
 	/*
 	 * @variableIndex is the new variable index to add; it is unique
 	 * @variable is the actual variable object
+	 * @isReplicatedAnywhereElse is a boolean referring to whether is variable is replicated at other sites, which is important information used by recovery
 	 */
-	public void addVariableAtSite(int variableIndex, Variable variable) {
+	public void addVariableAtSite(int variableIndex, Variable variable, boolean isReplicatedAnywhereElse) {
 		this.siteVariables.put(variableIndex, variable);
+		if(!isReplicatedAnywhereElse){
+			unreplicatedVariables.add(variableIndex);
+		}
 	}
 	
 	/*
@@ -200,7 +245,18 @@ public class Site {
 		str = str + variable.toStringLatestCommitted()+ "\n";
 		return str;
 	}
-	
+	/*
+	 * @variableIndex is the index of the variable that we want to check.
+	 * @return true if replicated at other site
+	 */
+	public boolean isVariableReplicated(int variableIndex){
+		for(int nonreplicated: this.unreplicatedVariables){
+			if(nonreplicated == variableIndex){
+				return false;
+			}
+		}
+		return true;
+	}
 	
 	/******************************************************************************************************
 	 * The following methods are lock related.

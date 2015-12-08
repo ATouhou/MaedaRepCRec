@@ -7,7 +7,8 @@ import java.util.List;
  * - abort
  * - locks given. details = ["give lock",transactionNumber, variableIndex, isLockRequestReadOnly]
  * - lock release. details = ["release lock",transactionNumber, variableIndex, isLockRequestReadOnly]
- * - recover, fail
+ * - recover. details = ["recover"]
+ * - fail. details = ["fail"]
  */
 public class Log {
 	

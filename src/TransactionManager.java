@@ -133,16 +133,14 @@ public class TransactionManager {
 		}else if(command[0].equals("fail")){
 			//command = ["fail", siteIndex]
 			int siteIndexToFail = Integer.parseInt(command[1]);
-			this.dataManager.getSite(siteIndexToFail).fail();
+			this.dataManager.getSite(siteIndexToFail).fail(currentTimestamp);
+		}else if(command[0].equals("recover")){
+			//command = ["recover", siteIndex]
+			int siteIndexToRecover = Integer.parseInt(command[1]);
+			this.dataManager.getSite(siteIndexToRecover).recover(currentTimestamp);
 		}
 		return true;
-		/*
-		 * TODO:
-		If command = recover, Recover.recover(Site)
-		If command = fail,
-		Call Site.fail() for the site specified in the command
 		
-		*/
 	}
 	/******************************************************************************************************
 	 * Execute the commands given by parser

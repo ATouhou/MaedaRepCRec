@@ -80,19 +80,27 @@ public class Variable {
 		//This means setting the versions written by the committing transaction and set that 
 		//as the current version
 		
-		//Get the latest timestamp by @committingTransaction
+		//Get the version with the latest timestamp of @committingTransaction from the list of versions
 		int maxTimestamp = -1;
 		int newCurrVersionIndex = -1; 
 		for(int i=0; i<this.allVersions.size(); i++){
 			Version version = this.allVersions.get(i);
-			if(version.getFromTransactionNumber()==committingTransaction 
-					&& version.getTimestamp()>maxTimestamp){
+
+			//A version with the transaction number of -1 means that it was loaded by the database
+			if((version.getFromTransactionNumber()==committingTransaction || version.getFromTransactionNumber()==-1)
+					&& version.getTimestamp()>maxTimestamp
+					){
 				newCurrVersionIndex = i;
+				maxTimestamp = version.getTimestamp();
 			}
 		}
-		this.allVersions.get(newCurrVersionIndex).setCommitted();
+		if(debug) System.out.println("Variable: Last committed version located at "+lastCommittedVersion+" All versions="+toStringAllVersions());
+		
 		this.lastCommittedVersion = newCurrVersionIndex;
 		
+		if(debug) System.out.println("Variable: T"+committingTransaction+" is committing "+this.allVersions.get(lastCommittedVersion).toString());
+
+		this.allVersions.get(lastCommittedVersion).setCommitted();
 		return this.allVersions.get(lastCommittedVersion).getValue();
 	}
 	/*
@@ -109,6 +117,17 @@ public class Variable {
 	public void restoreBeforeImage(Transaction t){
 		//Set the currentVersion to the before image of t
 		//TODO: IOW, set currentVersion to the last committed value that happenned before t started
+	}
+	/******************************************************************************************************
+	 * Recovery methods
+	 ******************************************************************************************************/
+	/*
+	 * If this variable is replicated at other sites, then reset the pointers to the versions on this variable,
+	 * setting them unreadable until a transaction writes to it.
+	 */
+	public void resetVersionIndexes(){
+		this.lastCommittedVersion = -1;
+		this.latestVersion = -1;
 	}
 	/******************************************************************************************************
 	 * Setter, getter methods
@@ -141,7 +160,14 @@ public class Variable {
 	public void setIndexVariable(int indexVariable) {
 		this.indexVariable = indexVariable;
 	}
-	
+	private String toStringAllVersions(){
+		String str = "[";
+		for(Version v: this.allVersions){
+			str = str + " "+v.toString();
+		}
+		str=str+"]";
+		return str;
+	}
 	
 	
 }

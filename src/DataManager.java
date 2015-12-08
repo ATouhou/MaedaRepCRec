@@ -27,7 +27,7 @@ public class DataManager {
 			for(int indexVariable=2; indexVariable<=20; indexVariable = indexVariable+2){
 				int value = 10 * indexVariable;
 				Variable evenVariable = new Variable(indexVariable, value, 0, true);
-				site.addVariableAtSite(indexVariable, evenVariable);
+				site.addVariableAtSite(indexVariable, evenVariable, true);
 			}
 		}
 				
@@ -39,7 +39,7 @@ public class DataManager {
 			
 			//Store the variable at siteIndex = 1 + index number mod 10
 			int siteIndex = 1 + (indexVariable % 10);
-			allSites.get(siteIndex).addVariableAtSite(indexVariable, oddVariable);
+			allSites.get(siteIndex).addVariableAtSite(indexVariable, oddVariable, false);
 			
 		}
 	}
