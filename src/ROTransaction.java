@@ -52,7 +52,11 @@ public class ROTransaction implements Transaction{
 	public void releaseLocks(int currentTimestamp) {
 		//Do nothing here
 	}
-
+	@Override
+	public void addLock(Lock lock) {
+		//Do nothing here		
+	}
+	
 	/*
 	 * Since this is a read-only transaction, there is no chance of abort since according to the available 
 	 * copies algorithm a read-only transaction need not to check for validation at commit (see slides).

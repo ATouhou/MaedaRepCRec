@@ -190,7 +190,7 @@ public class TransactionManager {
 						if(currentTransaction.getBeginningTimestamp()>conflictingTransaction.getBeginningTimestamp()){
 							System.out.println("TM: Abort T"+transactionNumber+" because it is younger than T"+conflictingTransaction.getTransactionNumber());
 							abort(transactionNumber, currentTimestamp);
-							//currentTransaction.abort(currentTimestamp);
+							return true;
 						}else{
 							//Otherwise T waits for the other transaction to complete.
 							//Add this command to the queue
@@ -288,7 +288,8 @@ public class TransactionManager {
 						//If T tries to access a lock held by an older transaction (one with a lesser timestamp), 
 						//then T aborts. 
 						if(rwTransaction.getBeginningTimestamp()>conflictingTransaction.getBeginningTimestamp()){
-							rwTransaction.abort( currentTimestamp);
+							//rwTransaction.abort( currentTimestamp);
+							abort(transactionNumber, currentTimestamp);
 						}else{
 							//Otherwise T waits for the other transaction to complete.
 							//Add this command to the queue
@@ -389,7 +390,7 @@ public class TransactionManager {
 		//Move the transaction from active to queue
 		this.queuedTransactions.put(transactionNumber, this.activeTransactions.get(transactionNumber));
 		this.activeTransactions.remove(transactionNumber);
-		System.out.println("TM: T"+transactionNumber+" moved from active to queue. Active transactions is contain T"+transactionNumber+":"+this.activeTransactions.containsKey(transactionNumber));
+		System.out.println("TM: T"+transactionNumber+" moved from active to queue." );
 		
 		//Set the transaction number that @transactionNumber is waiting for
 		this.queuedTransactions.get(transactionNumber).setToWaitFor(transactionNumberWait);
@@ -401,7 +402,7 @@ public class TransactionManager {
 		//Move the transaction from queue to active
 		this.activeTransactions.put(transactionNumber, this.queuedTransactions.get(transactionNumber));
 		this.queuedTransactions.remove(transactionNumber);
-		System.out.println("TM: T"+transactionNumber+" moved from queue to active. Queued transactions is contain T"+transactionNumber+":"+this.activeTransactions.containsKey(transactionNumber));
+		System.out.println("TM: T"+transactionNumber+" moved from queue to active. ");
 
 		//Unset the transaction from wait to active
 		this.activeTransactions.get(transactionNumber).setTransactionToActive();

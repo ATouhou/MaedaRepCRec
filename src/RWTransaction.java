@@ -6,6 +6,7 @@ public class RWTransaction implements Transaction{
 	private boolean isReadOnly = false;
 	private DataManager dm = null; 
 	
+	//TODO:get rid of locks in the transaction otherwise add them here and not only in the Sites when they area cquired
 	//List of locks the transaction owns; this list reflects the lock tables on the sites
 	List<Lock> locks = new ArrayList<Lock>();
 	
@@ -127,6 +128,14 @@ public class RWTransaction implements Transaction{
 		return false;
 	}
 
+	/*
+	 * @lock is the lock given by the Transaction Manager
+	 */
+	@Override
+	public void addLock(Lock lock) {
+		this.locks.add(lock);
+	}
+	
 	@Override
 	public void commit(int currentTimestamp) {
 		//At commit, the transaction informs all the variables to commit
@@ -146,10 +155,8 @@ public class RWTransaction implements Transaction{
 	public void abort(int currentTimestamp) {
 		// TODO: should we delete the version written by this transaction?
 		System.out.println("RWTran: T"+this.transactionNumber+" aborted.");
-		for(Lock lock: this.locks){
-			int siteLock = lock.getSiteIndex();
-			this.dm.getSite(siteLock).releaseLocks(siteLock, currentTimestamp);
-		}
+		releaseLocks( currentTimestamp);
+
 	}
 	
 	@Override
@@ -218,6 +225,7 @@ public class RWTransaction implements Transaction{
 	public void setTransactionToActive() {
 		this.waitForTransaction = -1;
 	}
+	
 	
 	
 

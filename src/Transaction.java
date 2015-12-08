@@ -19,6 +19,7 @@ public interface Transaction {
 	
 	void processOperation(String operation, String[] inputs, int currentTimestamp);
 	
+	void addLock(Lock lock);
 	void releaseLocks(int currentTimestamp);
 	
 	void commit(int currentTimestamp);

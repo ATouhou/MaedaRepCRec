@@ -226,7 +226,7 @@ public class Site {
 					&& lock.getLockedVariableIndex() == variableIndex
 					&& lock.isReadOnly()
 					&& !isLockRequestReadOnly)){
-				
+				System.out.println("Site: T"+transactionNumber+" found conflicting lock held by T"+lock.getTransactionNumber());
 				System.out.println("Site: "+(isLockRequestReadOnly?"Read":"Exclusive") +" Lock denied for T"+transactionNumber+" on x"+variableIndex+"."+siteIndex);
 				return null;
 				
@@ -250,7 +250,9 @@ public class Site {
 	 * @transactionNumber refers to the transaction in which his locks should be released
 	 */
 	public void releaseLocks(int transactionNumber, int currentTimestamp){
-		for(Lock lock: this.activeLocks){
+		int i=0;
+		while(i<this.activeLocks.size()){
+			Lock lock =this.activeLocks.get(i);
 			if(lock.getTransactionNumber() == transactionNumber){
 				
 				System.out.println("Site: Release lock from T"+transactionNumber+" on x"+lock.getLockedVariableIndex()+"."+siteIndex);
@@ -260,6 +262,8 @@ public class Site {
 				siteLog.addEvent(currentTimestamp, details);
 				
 				this.activeLocks.remove(lock);
+			}else{
+				i++;
 			}
 		}
 	}
